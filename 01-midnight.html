@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRAC — crac.fund</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #efe7d6;
+    --ink:   #0d0c0b;
+    --ink-2: #16140f;
+    --red:   #e0301e;
+    --font:  'Space Grotesk', sans-serif;
+  }
+
+  html { background: var(--ink); }
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: var(--font);
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    overflow-wrap: break-word;
+  }
+
+  /* ── GRAIN TEXTURE ─────────────────────────────────────────────────────────
+     Fine monochrome noise + a soft warm vignette over the near-black ink.
+     Fixed so it sits behind the (transparent) hero canvas and all sections. */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.05;
+    mix-blend-mode: screen;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 50% -8%, rgba(239,231,214,0.07), rgba(239,231,214,0) 55%),
+      radial-gradient(130% 130% at 50% 120%, rgba(0,0,0,0.55), rgba(0,0,0,0) 60%);
+  }
+
+  /* NAV — minimal, fixed, overlaid on the hero */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 36px;
+    mix-blend-mode: difference;
+  }
+  .nav-left { display: flex; align-items: center; gap: 13px; }
+  .nav-logo svg { display: block; width: 28px; height: 28px; }
+  .nav-wordmark { font-size: 14px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cream); }
+  .nav-right {
+    font-size: 12px; font-weight: 400; letter-spacing: 0.08em; color: var(--cream);
+    text-decoration: none; border-bottom: 1.5px solid var(--cream); padding-bottom: 2px;
+  }
+
+  /* HERO — the canvas IS the hero, full viewport, edge to edge */
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+    background: var(--ink);
+  }
+  #waveCanvas { display: block; width: 100%; height: 100%; position: absolute; inset: 0; }
+
+  .scroll-cue {
+    position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+    z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--cream); opacity: 0.55; mix-blend-mode: difference;
+    animation: bob 2.6s ease-in-out infinite;
+  }
+  .scroll-cue .bar { width: 1.5px; height: 30px; background: var(--cream); opacity: 0.6; }
+  @keyframes bob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 6px); } }
+
+  /* CONTENT SECTIONS BELOW THE HERO */
+  main { position: relative; z-index: 1; background: var(--ink); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 40px; }
+
+  .block { padding: clamp(72px, 11vw, 150px) 0; border-top: 1px solid rgba(239,231,214,0.12); }
+  .block:first-child { border-top: none; }
+
+  /* TAGLINE */
+  .tagline-block .eyebrow {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--red); margin-bottom: 30px; display: flex; align-items: center; gap: 12px;
+  }
+  .tagline-block .eyebrow::before { content: ''; width: 28px; height: 2px; background: var(--red); flex-shrink: 0; }
+  .tagline {
+    font-size: clamp(26px, 4.4vw, 48px); font-weight: 400; line-height: 1.18;
+    letter-spacing: -0.02em; max-width: 16ch; color: var(--cream);
+  }
+  .tagline em { font-style: normal; color: var(--red); }
+
+  /* LEDE */
+  .lede {
+    font-size: clamp(19px, 2.4vw, 26px); font-weight: 300; line-height: 1.62;
+    max-width: 30ch; color: var(--cream);
+  }
+  .lede strong { font-weight: 600; }
+
+  /* NEXT TRIMESTER */
+  .listening-block { display: flex; flex-direction: column; gap: 28px; }
+  .next-listening {
+    display: inline-block; /* span with block children — inline display fragments the left border */
+    font-size: clamp(15px, 2vw, 18px); font-weight: 400; letter-spacing: 0.03em;
+    color: var(--cream); border-left: 2px solid var(--red); padding: 14px 22px;
+    align-self: flex-start;
+  }
+  .next-listening .lbl { display: block; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.55; margin-bottom: 8px; }
+  .next-listening .date { font-size: clamp(20px, 3vw, 30px); font-weight: 600; letter-spacing: -0.01em; }
+  .footnote-small { font-size: 12px; font-weight: 300; letter-spacing: 0.03em; line-height: 1.7; color: var(--cream); opacity: 0.5; max-width: 46ch; }
+
+  /* STATS */
+  .stats { display: grid; gap: 0; }
+  .stat-item {
+    padding: 34px 0; border-bottom: 1px solid rgba(239,231,214,0.14);
+    display: grid; grid-template-columns: minmax(120px, 0.4fr) 1fr; gap: 28px; align-items: baseline;
+  }
+  .stat-item:first-child { border-top: 1px solid rgba(239,231,214,0.14); }
+  .stat-number { font-size: clamp(44px, 7vw, 72px); font-weight: 700; letter-spacing: -0.03em; line-height: 0.9; color: var(--cream); }
+  .stat-label { font-size: clamp(13px, 1.5vw, 15px); font-weight: 300; letter-spacing: 0.04em; line-height: 1.5; color: var(--cream); opacity: 0.78; }
+  .stat-item:nth-child(1) .stat-number,
+  .stat-item:nth-child(3) .stat-number { color: var(--red); }
+
+  /* FOOTER */
+  footer { padding: 56px 0 72px; border-top: 1px solid rgba(239,231,214,0.12); }
+  footer .wrap { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 32px; }
+  .footer-left { font-size: 13px; font-weight: 300; letter-spacing: 0.05em; color: var(--cream); opacity: 0.8; line-height: 1.8; }
+  .footer-left sup { font-size: 9px; opacity: 0.8; }
+  .footer-left a { color: inherit; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+  .footer-footnote { font-size: 11px; font-weight: 300; color: var(--cream); opacity: 0.45; max-width: 44ch; line-height: 1.8; letter-spacing: 0.02em; }
+  .footer-footnote sup { font-size: 8px; }
+
+  /* SCROLL REVEAL
+     Hidden state is gated behind the JS-added .js class on <html>, so if
+     JavaScript is disabled or throws before observers attach, every .reveal
+     element stays fully visible instead of being stranded at opacity:0. */
+  .js .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal { opacity: 1; transform: none; transition: none; }
+    .scroll-cue { animation: none; }
+  }
+
+  /* MOBILE */
+  @media (max-width: 760px) {
+    nav { padding: 16px 20px; }
+    .wrap { padding: 0 22px; }
+    .stat-item { grid-template-columns: 1fr; gap: 10px; }
+    footer .wrap { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV (minimal, overlaid) -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo" aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="14.5" stroke="#efe7d6" stroke-width="2"/>
+        <circle cx="16" cy="16" r="10" stroke="#efe7d6" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="5.5" stroke="#efe7d6" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="1.5" fill="#efe7d6"/>
+      </svg>
+    </div>
+    <span class="nav-wordmark">CRAC</span>
+  </div>
+  <a class="nav-right" href="mailto:hello@crac.fund">crac.fund</a>
+</nav>
+
+<!-- HERO — full viewport canvas -->
+<header class="hero">
+  <canvas id="waveCanvas"></canvas>
+  <div class="scroll-cue" aria-hidden="true">
+    <span>scroll</span>
+    <span class="bar"></span>
+  </div>
+</header>
+
+<!-- CONTENT BELOW -->
+<main>
+
+  <!-- TAGLINE -->
+  <section class="block tagline-block">
+    <div class="wrap">
+      <p class="eyebrow reveal">January · May · September</p>
+      <h2 class="tagline reveal">We meet three times a year.</h2>
+    </div>
+  </section>
+
+  <!-- LEDE -->
+  <section class="block">
+    <div class="wrap">
+      <p class="lede reveal">
+        crac is a small group. Each trimester we put some money into something we like.
+      </p>
+    </div>
+  </section>
+
+  <!-- NEXT TRIMESTER -->
+  <section class="block listening-block">
+    <div class="wrap reveal">
+      <span class="next-listening" id="meet">
+        <span class="lbl">next trimester</span>
+        <span class="date">January, May &amp; September</span>
+      </span>
+    </div>
+    <div class="wrap" style="margin-top:34px;">
+      <p class="footnote-small reveal">One decision per meeting.</p>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="block">
+    <div class="wrap stats">
+      <div class="stat-item reveal">
+        <span class="stat-number">33⅓</span>
+        <span class="stat-label">revolutions / minute</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-number">3</span>
+        <span class="stat-label">trimesters / year</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-number">1</span>
+        <span class="stat-label">decision</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <p class="footer-left reveal">
+      © CRAC — crac.fund<br>
+      <a href="mailto:hello@crac.fund">hello@crac.fund</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+// Mark that JS is live so CSS may hide .reveal elements. Without this class
+// (no-JS or a parse error in this block) everything stays fully visible.
+document.documentElement.classList.add('js');
+
+// ── TRIMESTER DATE ───────────────────────────────────────────────────────────
+(function(){
+  const el = document.getElementById('meet');
+  if (!el) return;
+  const dateEl = el.querySelector('.date');
+  if (!dateEl) return;
+
+  const now = new Date(), starts = [0, 4, 8], yr = now.getFullYear();
+  let next = null;
+  for (const y of [yr, yr + 1]) {
+    for (const m of starts) {
+      const d = new Date(y, m, 1);
+      if (d > now) { next = d; break; }
+    }
+    if (next) break;
+  }
+  // Guard: there is always a future trimester within yr..yr+1, but never throw.
+  if (!next) next = new Date(yr + 1, starts[0], 1);
+  dateEl.textContent = next.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+})();
+
+// ── SCROLL REVEAL ────────────────────────────────────────────────────────────
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const items = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(el => el.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+  items.forEach(el => io.observe(el));
+  // Bottom fallback: elements near the document end can sit inside the negative
+  // rootMargin zone forever at max scroll — reveal whatever's left once
+  // scrolling bottoms out (checked once immediately for short documents).
+  const finishIfBottom = () => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      items.forEach(el => el.classList.add('in'));
+      window.removeEventListener('scroll', finishIfBottom);
+    }
+  };
+  window.addEventListener('scroll', finishIfBottom, { passive: true });
+  finishIfBottom();
+})();
+
+// ── WAVY WEIGHT CANVAS (cream ribbons over near-black ink) ────────────────────
+(function () {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const MAX_DPR = 2;
+
+  const LINE_COUNT   = 72;
+  const THIN_W       = 1.1;
+  const THICK_W      = 14;
+  const WAVE_AMP     = 8;
+  const WAVE_FREQ    = 0.0054;
+  const WAVE_SPEED   = 0.34;
+  const SEGMENTS     = 260;
+
+  const INKC = '#efe7d6';   // warm cream ribbons
+  const WASH = '#0d0c0b';   // near-black per-frame wash (hoisted constant)
+
+  // ── POINTER INTERACTION ("ink pressure") ─────────────────────────────────────
+  // The cursor presses on the page like a pen: ribbons within PRESS_RADIUS swell
+  // in WIDTH ONLY (no displacement, no bending), as if the nib were laying down
+  // more ink under the hand. The per-segment half-width is multiplied by up to
+  // (1 + PRESS_MAX)× at the center with a smoothstep falloff to 1.0 at the edge,
+  // blended multiplicatively on TOP of the weight-driven width that spells "crac",
+  // so the word gains local ink weight under the cursor. The pointer is smoothed
+  // (lerp) so the pressure trails the hand, and an overall STRENGTH scalar eases
+  // to 0 when the pointer leaves the hero (or on touch end / blur).
+  const reduceMotion   = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const PRESS_RADIUS  = 170;            // px influence radius
+  const PRESS_RADIUS2 = PRESS_RADIUS * PRESS_RADIUS;
+  const PRESS_INV_R   = 1 / PRESS_RADIUS;
+  const PRESS_MAX     = 0.45;           // +45% half-width at the center — heavier ink
+  const POINTER_LERP    = 0.08;         // pointer smoothing per frame
+  const STRENGTH_LERP   = 0.10;         // influence ease in/out per frame
+  const SKIP_BAND       = PRESS_RADIUS; // cheap per-line y reject band (no displacement)
+
+  let heroRect = { left: 0, top: 0 }; // cached in resize() for canvas-local coords
+  let ptrTargetX = 0, ptrTargetY = 0; // raw pointer (canvas-local)
+  let ptrX = 0, ptrY = 0;             // smoothed pointer
+  let ptrTargetStrength = 0;          // 1 while pointer is over the hero, else 0
+  let ptrStrength = 0;                // eased influence scalar [0..1]
+  let ptrSeeded = false;              // snap smoothed pos to first pointer event
+  let ptrClientX = 0, ptrClientY = 0; // last raw pointer (viewport/client coords)
+  let ptrHasClient = false;           // a real pointer position has been seen
+
+  function shape(w) {
+    w = (w - 0.10) / 0.78;
+    if (w <= 0) return 0;
+    if (w >= 1) return 1;
+    return w * w * (3 - 2 * w);
+  }
+
+  let maskCanvas = null, maskCtx = null, maskData = null;
+  let precomputedWeights = null;
+
+  function buildMask() {
+    const panel = canvas.parentElement;
+    const pw = panel.clientWidth  || 640;
+    const ph = panel.clientHeight || 480;
+
+    // Guard against a degenerate 0×0 mask (hero collapsed/hidden at build time).
+    // Leave any previously-built weights in place rather than wiping to garbage.
+    if (pw < 1 || ph < 1) return;
+
+    if (!maskCanvas) {
+      maskCanvas = document.createElement('canvas');
+      maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    maskCanvas.width = pw;
+    maskCanvas.height = ph;
+    maskCtx.clearRect(0, 0, pw, ph);
+
+    let fontSize = Math.round(ph * 0.42);
+    maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    const maxW = pw * 0.78;
+    const measured = maskCtx.measureText('crac').width;
+    if (measured > maxW) {
+      fontSize = Math.floor(fontSize * maxW / measured);
+      maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    }
+    maskCtx.textAlign = 'center';
+    maskCtx.textBaseline = 'middle';
+    maskCtx.fillStyle = '#000000';
+    maskCtx.fillText('crac', pw / 2, ph / 2);
+
+    maskData = maskCtx.getImageData(0, 0, pw, ph).data;
+
+    const total = LINE_COUNT * (SEGMENTS + 1);
+    precomputedWeights = new Float32Array(total);
+    const blurRows = Math.max(1, Math.round(ph / LINE_COUNT * 0.34));
+
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const yCenter = (i + 0.5) / LINE_COUNT * ph;
+      const yMin = Math.max(0, Math.round(yCenter - blurRows));
+      const yMax = Math.min(ph - 1, Math.round(yCenter + blurRows));
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = Math.min(pw - 1, Math.max(0, Math.round(s / SEGMENTS * pw)));
+        let sum = 0, count = 0;
+        for (let ry = yMin; ry <= yMax; ry++) { sum += maskData[(ry * pw + x) * 4 + 3]; count++; }
+        precomputedWeights[i * (SEGMENTS + 1) + s] = sum / count / 255;
+      }
+    }
+  }
+
+  let currentDpr = 1;
+  function resize() {
+    const panel = canvas.parentElement;
+    currentDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    const w = panel.clientWidth, h = panel.clientHeight;
+    canvas.width = w * currentDpr;
+    canvas.height = h * currentDpr;
+    ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
+    // Cache the hero's viewport rect for canvas-local pointer coords. The hero
+    // sits at the top, but use the cached rect anyway for correctness.
+    const r = canvas.getBoundingClientRect();
+    heroRect.left = r.left;
+    heroRect.top  = r.top;
+    buildMask();
+  }
+
+  let startTime = null, rafId = null;
+  const topX = new Float32Array(SEGMENTS + 1);
+  const topY = new Float32Array(SEGMENTS + 1);
+  const botY = new Float32Array(SEGMENTS + 1);
+
+  function draw(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = (ts - startTime) * 0.001;
+    const panel = canvas.parentElement;
+    const pw = panel.clientWidth, ph = panel.clientHeight;
+
+    // Near-black wash each frame (slightly warmer than page ink for depth)
+    ctx.fillStyle = WASH;
+    ctx.fillRect(0, 0, pw, ph);
+
+    if (!precomputedWeights) { rafId = requestAnimationFrame(draw); return; }
+
+    // Smooth the pointer toward its target and ease the influence in/out so the
+    // pressure trails the hand and never snaps. Disabled under reduced motion.
+    if (!reduceMotion) {
+      if (ptrSeeded) {
+        ptrX += (ptrTargetX - ptrX) * POINTER_LERP;
+        ptrY += (ptrTargetY - ptrY) * POINTER_LERP;
+      } else {
+        ptrX = ptrTargetX; ptrY = ptrTargetY;
+      }
+      ptrStrength += (ptrTargetStrength - ptrStrength) * STRENGTH_LERP;
+    }
+    // Active only when the smoothed influence is meaningfully nonzero.
+    const ptrActive = !reduceMotion && ptrStrength > 0.001;
+    const px = ptrX, py = ptrY;
+    const pressAmt = PRESS_MAX * ptrStrength;   // current peak width swell
+
+    ctx.fillStyle = INKC;
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const phase  = i * 0.31 + elapsed * WAVE_SPEED;
+      const phase2 = i * 0.17 + elapsed * WAVE_SPEED * 0.7 + 1.1;
+      const yBase  = (i + 0.5) / LINE_COUNT * ph;
+      const base   = i * (SEGMENTS + 1);
+
+      // Cheap per-line reject: skip the pointer math entirely when this line's
+      // baseline can't possibly fall inside the influence band.
+      const lineHit = ptrActive && Math.abs(yBase - py) < SKIP_BAND;
+
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = (s / SEGMENTS) * pw;
+        const y = yBase
+                + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+        let press = 1;
+        if (lineHit) {
+          const dx = x - px, dy = y - py;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < PRESS_RADIUS2) {
+            const d = Math.sqrt(d2);
+            // smoothstep falloff: 1 at the cursor, 0 at the radius edge
+            const t = 1 - d * PRESS_INV_R;
+            const fall = t * t * (3 - 2 * t);
+            // press harder → more ink: multiply the half-width up to (1+PRESS_MAX)×
+            press += pressAmt * fall;
+          }
+        }
+        const half = (THIN_W + (THICK_W - THIN_W) * shape(precomputedWeights[base + s])) * 0.5 * press;
+        topX[s] = x; topY[s] = y - half; botY[s] = y + half;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(topX[0], topY[0]);
+      for (let s = 1; s <= SEGMENTS; s++) ctx.lineTo(topX[s], topY[s]);
+      for (let s = SEGMENTS; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    rafId = requestAnimationFrame(draw);
+  }
+
+  // Two independent reasons to pause the loop: the tab is hidden, or the hero
+  // canvas has scrolled out of view. The loop runs only when BOTH say "go".
+  let pageVisible = !document.hidden;
+  let heroOnScreen = true;
+  let initialized = false;
+
+  function start() {
+    if (!initialized || rafId || !pageVisible || !heroOnScreen) return;
+    startTime = null;                 // reset so waves don't jump after a pause
+    rafId = requestAnimationFrame(draw);
+  }
+  function stop() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    pageVisible = !document.hidden;
+    if (pageVisible) start(); else stop();
+  });
+
+  // Pause the rAF loop when the hero is not intersecting the viewport.
+  if ('IntersectionObserver' in window) {
+    const heroIO = new IntersectionObserver((entries) => {
+      heroOnScreen = entries[0].isIntersecting;
+      if (heroOnScreen) start(); else stop();
+    }, { threshold: 0 });
+    heroIO.observe(canvas.parentElement || canvas);
+  }
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      resize();
+      // Snap-reset time so the post-resize frame doesn't lurch.
+      startTime = null;
+    }, 150);
+  });
+
+  // ── POINTER LISTENERS ────────────────────────────────────────────────────────
+  // Reduced motion: no interaction at all (the frame stays as-is). Otherwise we
+  // track the pointer in canvas-local coords (via the rect cached in resize) and
+  // raise/lower the influence strength as it enters/leaves the hero.
+  if (!reduceMotion) {
+    const hero = canvas.parentElement || canvas;
+    const easeOut = () => { ptrTargetStrength = 0; };
+
+    // Re-evaluate engagement from the last known CLIENT coords against the (fresh)
+    // cached rect. Shared by pointermove and the scroll handler: pointermove first
+    // updates the raw client coords, scroll first refreshes heroRect. Maps client→
+    // canvas-local, engages while over the hero, eases out when the pointer falls
+    // outside the bounds (e.g. the hero slid up under a stationary cursor).
+    function evaluatePointer() {
+      if (!ptrHasClient) return;
+      const lx = ptrClientX - heroRect.left;
+      const ly = ptrClientY - heroRect.top;
+      const pw = canvas.parentElement.clientWidth;
+      const ph = canvas.parentElement.clientHeight;
+      if (lx >= 0 && ly >= 0 && lx <= pw && ly <= ph) {
+        ptrTargetX = lx; ptrTargetY = ly;
+        if (!ptrSeeded) { ptrX = lx; ptrY = ly; ptrSeeded = true; }
+        ptrTargetStrength = 1;
+      } else {
+        ptrTargetStrength = 0;
+      }
+    }
+
+    window.addEventListener('pointermove', (e) => {
+      ptrClientX = e.clientX; ptrClientY = e.clientY; ptrHasClient = true;
+      evaluatePointer();
+    }, { passive: true });
+
+    // Scrolling fires no pointermove, so a stationary cursor over a hero that
+    // slides away would keep distorting the waves. On scroll, refresh the cached
+    // rect and re-evaluate — throttled to one rect read per frame via rAF.
+    let scrollRafPending = false;
+    window.addEventListener('scroll', () => {
+      if (scrollRafPending) return;
+      scrollRafPending = true;
+      requestAnimationFrame(() => {
+        scrollRafPending = false;
+        const r = canvas.getBoundingClientRect();
+        heroRect.left = r.left;
+        heroRect.top  = r.top;
+        evaluatePointer();
+      });
+    }, { passive: true });
+
+    hero.addEventListener('pointerleave', easeOut);
+    window.addEventListener('pointercancel', easeOut);
+    window.addEventListener('blur', easeOut);
+  }
+
+  // Initialize once fonts are ready so the "crac" mask matches the rendered
+  // weight. If fonts hang, a fallback timeout boots the animation anyway.
+  let booted = false;
+  function boot() {
+    if (booted) return;
+    booted = true;
+    initialized = true;
+    resize();
+    start();
+  }
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(boot);
+    setTimeout(boot, 1500);           // fallback if font loading stalls
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>

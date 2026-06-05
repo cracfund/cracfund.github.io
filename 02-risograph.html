@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRAC — crac.fund</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Mark JS as available before first paint so reveal elements only hide when
+     we can actually un-hide them. No-JS or a parse error leaves text visible. -->
+<script>document.documentElement.classList.add('js');</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #f2ece0;
+    --black: #181410;
+    --red: #e0301e;
+    --blue: #1d36b8;
+    --yellow: #f6bf02;
+    --font: 'Space Grotesk', sans-serif;
+  }
+
+  html { background: var(--cream); }
+  body {
+    background: var(--cream);
+    color: var(--black);
+    font-family: var(--font);
+    font-weight: 300;
+    overflow-x: hidden;
+    position: relative;
+    overflow-wrap: break-word;
+  }
+
+  /* ── PAPER TEXTURE ─────────────────────────────────────────────────────────
+     Fine grain + soft fibers multiplied over cream — a sheet of riso paper. */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6 0.02' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23f)'/%3E%3C/svg%3E");
+    background-size: 180px 180px, 320px 320px;
+    opacity: 0.12;
+    mix-blend-mode: multiply;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(135% 95% at 50% -10%, rgba(255,253,247,0.5), rgba(255,253,247,0) 58%),
+      radial-gradient(110% 110% at 100% 100%, rgba(92,72,42,0.12), rgba(92,72,42,0) 55%),
+      radial-gradient(110% 110% at 0% 100%, rgba(92,72,42,0.09), rgba(92,72,42,0) 55%);
+    mix-blend-mode: multiply;
+  }
+
+  /* ── MINIMAL FIXED NAV (overlaid on hero) ───────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px;
+    mix-blend-mode: multiply;
+  }
+  .nav-left { display: flex; align-items: center; gap: 12px; }
+  .nav-logo svg { display: block; width: 28px; height: 28px; }
+  .nav-wordmark { font-size: 14px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--black); }
+  .nav-right { font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--red); text-decoration: none; border-bottom: 1.5px solid var(--red); padding-bottom: 1px; }
+  .nav-right:hover { color: var(--blue); border-color: var(--blue); }
+
+  /* ── HERO: full-viewport canvas, edge to edge ───────────────────────────── */
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+  }
+  #waveCanvas { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+
+  .scroll-cue {
+    position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%);
+    z-index: 50; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--black); opacity: 0.55; display: flex; flex-direction: column;
+    align-items: center; gap: 8px; mix-blend-mode: multiply;
+    animation: bob 2.4s ease-in-out infinite;
+  }
+  .scroll-cue::after { content: ''; width: 1px; height: 26px; background: var(--black); opacity: 0.5; }
+  @keyframes bob { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(5px); } }
+
+  /* ── SCROLL SECTIONS ────────────────────────────────────────────────────── */
+  .section {
+    padding: clamp(64px, 12vh, 140px) clamp(24px, 7vw, 96px);
+    border-top: 3px solid var(--black);
+    position: relative;
+  }
+  .section .inner { max-width: 1100px; margin: 0 auto; }
+
+  /* duotone tints, multiplied so the paper grain shows through */
+  .tint-red  { background: rgba(224, 48, 30, 0.07); }
+  .tint-blue { background: rgba(29, 54, 184, 0.07); }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
+    margin-bottom: 26px; display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::before { content: ''; display: block; width: 28px; height: 2px; flex-shrink: 0; }
+  .tint-red  .eyebrow { color: var(--red); }
+  .tint-red  .eyebrow::before { background: var(--red); }
+  .tint-blue .eyebrow { color: var(--blue); }
+  .tint-blue .eyebrow::before { background: var(--blue); }
+
+  /* TAGLINE block */
+  .tagline { font-size: clamp(26px, 4vw, 46px); font-weight: 500; line-height: 1.18; letter-spacing: -0.02em; max-width: 22ch; }
+  .next-listening {
+    margin-top: 40px; font-size: 14px; font-weight: 400; letter-spacing: 0.04em;
+    border-left: 3px solid var(--yellow); padding: 12px 18px; display: inline-block;
+    background: rgba(246, 191, 2, 0.12);
+  }
+
+  /* LEDE block */
+  .lede-text { font-size: clamp(20px, 2.6vw, 30px); font-weight: 300; line-height: 1.55; max-width: 24ch; }
+  .lede-text strong { font-weight: 600; }
+  .lede-foot { margin-top: 36px; font-size: 12px; font-weight: 300; letter-spacing: 0.05em; opacity: 0.6; line-height: 1.7; max-width: 40ch; }
+
+  /* STATS block */
+  .stats-head { font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 36px; }
+  .stat-item { padding: 28px 24px 28px 0; border-top: 2px solid var(--black); }
+  .stat-number { font-size: clamp(44px, 6vw, 72px); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .stat-item:nth-child(1) .stat-number { color: var(--red); }
+  .stat-item:nth-child(2) .stat-number { color: var(--blue); }
+  .stat-item:nth-child(3) .stat-number { color: var(--black); }
+  .stat-label { margin-top: 16px; font-size: 13px; font-weight: 300; letter-spacing: 0.04em; line-height: 1.5; max-width: 18ch; }
+
+  /* FOOTER */
+  footer {
+    padding: clamp(48px, 8vh, 80px) clamp(24px, 7vw, 96px) 56px;
+    border-top: 3px solid var(--black);
+    background: rgba(224, 48, 30, 0.06);
+  }
+  .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
+  .footer-mark { font-size: clamp(40px, 7vw, 84px); font-weight: 700; letter-spacing: -0.04em; line-height: 0.9; color: var(--black); }
+  .footer-mark .b { color: var(--blue); }
+  .footer-mark .r { color: var(--red); }
+  .footer-left { font-size: 12px; font-weight: 300; letter-spacing: 0.05em; opacity: 0.7; line-height: 1.7; }
+  .footer-left a { color: inherit; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: break-word; }
+  .footer-left sup { font-size: 9px; opacity: 0.8; }
+  .footer-footnote { margin-top: 28px; max-width: 1100px; margin-left: auto; margin-right: auto; font-size: 10px; font-weight: 300; opacity: 0.5; line-height: 1.7; letter-spacing: 0.02em; }
+  .footer-footnote sup { font-size: 8px; }
+
+  /* ── REVEAL ANIMATION ───────────────────────────────────────────────────────
+     Hidden state is gated behind .js (added by JS before observers attach), so
+     no-JS or a JS error always leaves text fully visible. */
+  .js .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+  .js .reveal.is-visible { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal { opacity: 1 !important; transform: none !important; transition: none; }
+    .scroll-cue { animation: none; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* ── MOBILE ─────────────────────────────────────────────────────────────── */
+  @media (max-width: 760px) {
+    nav { padding: 14px 18px; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .stat-item { padding: 22px 0; }
+    .footer-inner { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- MINIMAL FIXED NAV -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo" aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="14.5" stroke="#181410" stroke-width="2"/>
+        <circle cx="16" cy="16" r="10" stroke="#181410" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="5.5" stroke="#181410" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="1.5" fill="#181410"/>
+      </svg>
+    </div>
+    <span class="nav-wordmark">CRAC</span>
+  </div>
+  <a class="nav-right" href="mailto:hello@crac.fund">crac.fund</a>
+</nav>
+
+<!-- HERO: the wavy "crac" canvas IS the hero -->
+<section class="hero">
+  <canvas id="waveCanvas"></canvas>
+  <div class="scroll-cue" aria-hidden="true">scroll</div>
+</section>
+
+<!-- TAGLINE (red-tinted) -->
+<section class="section tint-red">
+  <div class="inner">
+    <p class="eyebrow reveal">January · May · September</p>
+    <h2 class="tagline reveal">We meet three times a year.</h2>
+    <span class="next-listening reveal" id="meet">next trimester — loading…</span>
+  </div>
+</section>
+
+<!-- LEDE (blue-tinted) -->
+<section class="section tint-blue">
+  <div class="inner">
+    <p class="eyebrow reveal">The Group</p>
+    <p class="lede-text reveal">
+      crac is a small group. Each trimester we put some money into <strong>something we like</strong>.
+    </p>
+    <p class="lede-foot reveal">One decision per meeting.</p>
+  </div>
+</section>
+
+<!-- STATS (red-tinted) -->
+<section class="section tint-red">
+  <div class="inner">
+    <p class="stats-head reveal">By the Numbers</p>
+    <div class="stats-grid">
+      <div class="stat-item reveal">
+        <div class="stat-number">33⅓</div>
+        <div class="stat-label">revolutions / minute</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-number">3</div>
+        <div class="stat-label">trimesters / year</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-number">1</div>
+        <div class="stat-label">decision</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-mark reveal"><span class="r">c</span>r<span class="b">a</span>c</div>
+    <p class="footer-left reveal">
+      © crac — crac.fund<br>
+      <a href="mailto:hello@crac.fund">hello@crac.fund</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+// ── TRIMESTER DATE ───────────────────────────────────────────────────────────
+(function(){
+  const el = document.getElementById('meet');
+  if (!el) return;
+  const now = new Date(), starts = [0, 4, 8], yr = now.getFullYear();
+  let next = null;
+  for (const y of [yr, yr + 1]) {
+    for (const m of starts) {
+      const d = new Date(y, m, 1);
+      if (d > now) { next = d; break; }
+    }
+    if (next) break;
+  }
+  if (!next) { el.textContent = 'next trimester — January, May & September'; return; }
+  const fmt = next.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  el.textContent = 'next trimester — ' + fmt;
+})();
+
+// ── SCROLL REVEAL (IntersectionObserver, respects reduced motion) ─────────────
+(function(){
+  const reduce = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const items = document.querySelectorAll('.reveal');
+  const showAll = () => items.forEach(el => el.classList.add('is-visible'));
+
+  if (reduce || !('IntersectionObserver' in window)) { showAll(); return; }
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, idx) => {
+      if (e.isIntersecting) {
+        e.target.style.transitionDelay = Math.min(idx * 70, 280) + 'ms';
+        e.target.classList.add('is-visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+  items.forEach(el => io.observe(el));
+  // Bottom fallback: elements near the document end can sit inside the negative
+  // rootMargin zone forever at max scroll — reveal whatever's left once
+  // scrolling bottoms out (checked once immediately for short documents).
+  const finishIfBottom = () => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      showAll();
+      window.removeEventListener('scroll', finishIfBottom);
+    }
+  };
+  window.addEventListener('scroll', finishIfBottom, { passive: true });
+  finishIfBottom();
+
+  // Fail-safe: nothing should ever stay hidden. If anything is still hidden a
+  // few seconds in (observer never fired, error elsewhere), force it visible.
+  setTimeout(showAll, 3000);
+})();
+
+// ── RISOGRAPH DUOTONE WAVE CANVAS ────────────────────────────────────────────
+//  Two overlapping wave systems (riso red + riso blue), phase-offset, composited
+//  with 'multiply' so overlaps darken like misregistered riso ink. Transparent
+//  background lets the cream paper + grain show through.
+(function () {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const MAX_DPR = 2;
+
+  const LINE_COUNT = 42;
+  const THIN_W     = 1.6;
+  const THICK_W    = 15;
+  const WAVE_AMP   = 8;
+  const WAVE_FREQ  = 0.0060;
+  const WAVE_SPEED = 0.42;
+  const SEGMENTS   = 200;
+
+  const RED  = '#e0301e';
+  const BLUE = '#1d36b8';
+
+  // two ink passes: color + phase/amplitude offset so they misregister.
+  // dirX/dirY: unit direction the cursor "loupe" drags this pass when the
+  // pointer is near — red up-left, blue down-right — so misregistration splits.
+  const PASSES = [
+    { color: RED,  phaseOff: 0.0,  ampScale: 1.0,  speedScale: 1.0,  freqScale: 1.0,  dirX: -1, dirY: -1 },
+    { color: BLUE, phaseOff: 1.7,  ampScale: 0.85, speedScale: -0.9, freqScale: 1.12, dirX:  1, dirY:  1 }
+  ];
+
+  // ── POINTER "LOUPE" MISREGISTRATION ──
+  // Near the cursor the red/blue passes pull apart (red up-left, blue
+  // down-right) up to POINTER_MAX_SEP px each, with a smooth falloff inside
+  // POINTER_RADIUS. Disabled entirely under reduced motion.
+  const POINTER_RADIUS  = 170;            // px of influence
+  const POINTER_R2      = POINTER_RADIUS * POINTER_RADIUS;
+  const POINTER_MAX_SEP = 14;             // max px each pass shifts
+  const POINTER_LERP    = 0.1;            // position/strength smoothing per frame
+  const reduceMotion = !!(window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  let rectLeft = 0, rectTop = 0;          // canvas-local coord offset (from resize)
+  let rawPX = 0, rawPY = 0;               // latest raw pointer (canvas-local)
+  let rawStrength = 0;                    // 1 while pointer over canvas, eases to 0
+  let pPX = 0, pPY = 0, pStrength = 0;    // smoothed values used while drawing
+  let lastClientX = 0, lastClientY = 0;   // latest raw pointer (page/client coords)
+  let havePointer = false;                // true once we've seen a pointermove
+
+  function shape(w) {
+    w = (w - 0.10) / 0.78;
+    if (w <= 0) return 0;
+    if (w >= 1) return 1;
+    return w * w * (3 - 2 * w);
+  }
+
+  let maskCanvas = null, maskCtx = null, maskData = null;
+  let precomputedWeights = null;
+
+  function buildMask(pw, ph) {
+    if (!maskCanvas) {
+      maskCanvas = document.createElement('canvas');
+      maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    maskCanvas.width = pw;
+    maskCanvas.height = ph;
+    maskCtx.clearRect(0, 0, pw, ph);
+
+    let fontSize = Math.round(ph * 0.46);
+    maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    const maxW = pw * 0.86;
+    const measured = maskCtx.measureText('crac').width;
+    if (measured > maxW) {
+      fontSize = Math.floor(fontSize * maxW / measured);
+      maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    }
+    maskCtx.textAlign = 'center';
+    maskCtx.textBaseline = 'middle';
+    maskCtx.fillStyle = '#000000';
+    maskCtx.fillText('crac', pw / 2, ph / 2);
+
+    maskData = maskCtx.getImageData(0, 0, pw, ph).data;
+
+    const total = LINE_COUNT * (SEGMENTS + 1);
+    precomputedWeights = new Float32Array(total);
+    const blurRows = Math.max(1, Math.round(ph / LINE_COUNT * 0.34));
+
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const yCenter = (i + 0.5) / LINE_COUNT * ph;
+      const yMin = Math.max(0, Math.round(yCenter - blurRows));
+      const yMax = Math.min(ph - 1, Math.round(yCenter + blurRows));
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = Math.min(pw - 1, Math.max(0, Math.round(s / SEGMENTS * pw)));
+        let sum = 0, count = 0;
+        for (let ry = yMin; ry <= yMax; ry++) { sum += maskData[(ry * pw + x) * 4 + 3]; count++; }
+        precomputedWeights[i * (SEGMENTS + 1) + s] = sum / count / 255;
+      }
+    }
+  }
+
+  let currentDpr = 1;
+  function resize() {
+    const parent = canvas.parentElement;
+    const w = parent.clientWidth, h = parent.clientHeight;
+    // Guard against 0×0 (hero hidden / not yet laid out): skip until we have a
+    // real panel, otherwise the mask would build at a size that never matches.
+    if (w <= 0 || h <= 0) return false;
+    currentDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    canvas.width  = Math.max(1, Math.round(w * currentDpr));
+    canvas.height = Math.max(1, Math.round(h * currentDpr));
+    // Draw in CSS pixels; the backing store is scaled by dpr.
+    ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
+    // Cache the canvas rect so pointermove can map page → canvas-local coords
+    // without forcing layout every move.
+    const r = canvas.getBoundingClientRect();
+    rectLeft = r.left;
+    rectTop  = r.top;
+    buildMask(w, h);
+    return true;
+  }
+
+  let startTime = null, rafId = null;
+  const topX = new Float32Array(SEGMENTS + 1);
+  const topY = new Float32Array(SEGMENTS + 1);
+  const botY = new Float32Array(SEGMENTS + 1);
+
+  function drawPass(pass, elapsed, pw, ph) {
+    ctx.fillStyle = pass.color;
+    // Peak per-pass offset for the current (smoothed) loupe strength. The
+    // per-segment falloff scales these toward the pointer; 0 when far / inactive.
+    const active = pStrength > 0.001;
+    const offMax = POINTER_MAX_SEP * pStrength;
+    const offX   = pass.dirX * offMax;
+    const offY   = pass.dirY * offMax;
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const phase  = i * 0.31 + elapsed * WAVE_SPEED * pass.speedScale + pass.phaseOff;
+      const phase2 = i * 0.17 + elapsed * WAVE_SPEED * 0.7 * pass.speedScale + 1.1 + pass.phaseOff;
+      const yBase  = (i + 0.5) / LINE_COUNT * ph;
+      const base   = i * (SEGMENTS + 1);
+      const amp    = WAVE_AMP * pass.ampScale;
+      const freq   = WAVE_FREQ * pass.freqScale;
+
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = (s / SEGMENTS) * pw;
+        let y = yBase
+                + Math.sin(x * freq + phase) * amp
+                + Math.sin(x * freq * 1.7 + phase2) * amp * 0.35;
+        let dx = 0, dy = 0;
+        if (active) {
+          // Squared-distance falloff: skip cheaply outside the radius.
+          const ddx = x - pPX, ddy = y - pPY;
+          const d2 = ddx * ddx + ddy * ddy;
+          if (d2 < POINTER_R2) {
+            // smooth (1 - d2/r2)^2 falloff, peak at the cursor
+            const f = 1 - d2 / POINTER_R2;
+            const fall = f * f;
+            dx = offX * fall;
+            dy = offY * fall;
+          }
+        }
+        const half = (THIN_W + (THICK_W - THIN_W) * shape(precomputedWeights[base + s])) * 0.5;
+        topX[s] = x + dx; topY[s] = y + dy - half; botY[s] = y + dy + half;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(topX[0], topY[0]);
+      for (let s = 1; s <= SEGMENTS; s++) ctx.lineTo(topX[s], topY[s]);
+      for (let s = SEGMENTS; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  function draw(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = (ts - startTime) * 0.001;
+    const parent = canvas.parentElement;
+    const pw = parent.clientWidth, ph = parent.clientHeight;
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.clearRect(0, 0, pw, ph);   // transparent — paper shows through
+
+    // Smooth the loupe toward the latest pointer + target strength so the
+    // misregistration trails the cursor and eases out on leave.
+    pPX += (rawPX - pPX) * POINTER_LERP;
+    pPY += (rawPY - pPY) * POINTER_LERP;
+    pStrength += (rawStrength - pStrength) * POINTER_LERP;
+
+    if (precomputedWeights) {
+      // first pass normal, second multiplied so overlaps go dark (misregister)
+      drawPass(PASSES[0], elapsed, pw, ph);
+      ctx.globalCompositeOperation = 'multiply';
+      drawPass(PASSES[1], elapsed, pw, ph);
+      ctx.globalCompositeOperation = 'source-over';   // reset every frame
+    }
+
+    rafId = requestAnimationFrame(draw);
+  }
+
+  // ── PLAY/PAUSE — only run the rAF loop when the hero is visible AND the tab
+  //    is focused. onScreen (IntersectionObserver) and !document.hidden must
+  //    both hold. Resetting startTime on (re)start keeps the waves from jumping.
+  let onScreen = true;
+  function shouldRun() { return onScreen && !document.hidden; }
+  function start() {
+    if (rafId || !shouldRun()) return;
+    startTime = null;                 // reset so animation resumes smoothly
+    rafId = requestAnimationFrame(draw);
+  }
+  function stop() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+  function sync() { shouldRun() ? start() : stop(); }
+
+  document.addEventListener('visibilitychange', sync);
+
+  if ('IntersectionObserver' in window) {
+    const vis = new IntersectionObserver((entries) => {
+      onScreen = entries[0].isIntersecting;
+      sync();
+    }, { threshold: 0 });
+    vis.observe(canvas);
+  }
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      resize();          // rebuilds mask at the new size; safe if 0×0
+      startTime = null;  // avoid a time jump after the resize
+    }, 150);
+  });
+
+  // ── POINTER LISTENERS — drive the loupe misregistration (no-op under reduced
+  //    motion). Coords are mapped to canvas-local space via the cached rect.
+  if (!reduceMotion) {
+    const release = () => { rawStrength = 0; };  // ease influence to 0
+    // Re-evaluate the loupe from the last known CLIENT coords + the current
+    // cached rect. Shared by pointermove and scroll so a scroll (which moves
+    // the hero under a stationary cursor) updates engagement and target spot.
+    const evaluatePointer = () => {
+      if (!havePointer) return;
+      rawPX = lastClientX - rectLeft;
+      rawPY = lastClientY - rectTop;
+      // Only "on" while the pointer is actually over the canvas panel.
+      rawStrength = (rawPX >= 0 && rawPY >= 0
+        && rawPX <= canvas.clientWidth && rawPY <= canvas.clientHeight) ? 1 : 0;
+    };
+    window.addEventListener('pointermove', (e) => {
+      lastClientX = e.clientX;
+      lastClientY = e.clientY;
+      havePointer = true;
+      evaluatePointer();
+    }, { passive: true });
+    window.addEventListener('pointerleave', release, { passive: true });
+    window.addEventListener('blur', release, { passive: true });
+
+    // Scroll moves the hero under a stationary pointer: refresh the cached rect
+    // and re-evaluate so the effect eases out when the cursor leaves the panel
+    // and tracks the right canvas spot while still over it. rAF-throttled so we
+    // hit getBoundingClientRect at most once per frame, never per-frame steady.
+    let scrollScheduled = false;
+    window.addEventListener('scroll', () => {
+      if (scrollScheduled) return;
+      scrollScheduled = true;
+      requestAnimationFrame(() => {
+        scrollScheduled = false;
+        const r = canvas.getBoundingClientRect();
+        rectLeft = r.left;
+        rectTop  = r.top;
+        evaluatePointer();
+      });
+    }, { passive: true });
+  }
+
+  function init() {
+    // resize() returns false if the panel is 0×0 (not laid out yet); retry.
+    if (!resize()) { requestAnimationFrame(init); return; }
+    start();
+  }
+  // Start once fonts are ready so the mask measures the real 'crac' glyphs,
+  // but never block on a missing/failing Font Loading API.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(init, init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>

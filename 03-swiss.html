@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.className += ' js';</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRAC — crac.fund</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white: #ffffff;
+    --ink: #0a0a0a;
+    --red: #e0301e;
+    --hair: #0a0a0a;
+    --font: 'Space Grotesk', sans-serif;
+    --gut: 24px;
+  }
+
+  html { background: var(--white); }
+  body {
+    background: var(--white);
+    color: var(--ink);
+    font-family: var(--font);
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── MINIMAL FIXED NAV ──────────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 32px;
+    mix-blend-mode: difference;   /* stays legible over white paper and black waves */
+    color: #ffffff;
+    pointer-events: none;
+  }
+  nav a, nav .nav-wordmark { pointer-events: auto; }
+  .nav-wordmark {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #ffffff;
+  }
+  .nav-right {
+    font-size: 12px; font-weight: 400; letter-spacing: 0.08em;
+    color: #ffffff; text-decoration: none; text-transform: uppercase;
+  }
+  .nav-right:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── HERO = FULL VIEWPORT CANVAS ────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    width: 100vw;
+    height: 100vh;        /* fallback */
+    height: 100svh;       /* small-viewport-aware */
+    overflow: hidden;
+    background: var(--white);
+  }
+  #waveCanvas { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+
+  .scroll-cue {
+    position: absolute; left: 32px; bottom: 24px; z-index: 50;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .scroll-cue::before { content: ''; width: 40px; height: 1px; background: var(--red); }
+
+  /* ── SCROLL SECTIONS — STRICT 12-COL GRID ───────────────────────────────── */
+  main { display: block; }
+
+  .spread {
+    border-top: 1px solid var(--hair);
+    padding: 0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--gut);
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  /* sticky editorial section header */
+  .spread-head {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--white);
+    border-bottom: 1px solid var(--hair);
+    padding: 14px 0;
+    margin-bottom: 64px;
+  }
+  .spread-head .grid { align-items: baseline; }
+  .spread-index {
+    grid-column: 1 / 2;
+    font-size: 13px; font-weight: 700; color: var(--red);
+    font-variant-numeric: tabular-nums;
+  }
+  .spread-kicker {
+    grid-column: 2 / 13;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .spread-body { padding-bottom: 120px; }
+
+  /* reveal animation — only hide when JS is present and can reveal them.
+     No-JS or JS error: .js is never added, so text stays fully visible. */
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s cubic-bezier(0.22,0.61,0.36,1), transform 0.7s cubic-bezier(0.22,0.61,0.36,1);
+    will-change: opacity, transform;
+  }
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  /* — TAGLINE / LEDE SPREAD — */
+  .tagline {
+    grid-column: 1 / 11;
+    font-size: clamp(34px, 7vw, 104px);
+    font-weight: 500;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    overflow-wrap: break-word;
+  }
+  .tagline .accent { color: var(--red); }
+
+  .lede {
+    grid-column: 1 / 8;
+    margin-top: 72px;
+    font-size: clamp(20px, 2.2vw, 30px);
+    font-weight: 300;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .lede strong { font-weight: 600; }
+  .lede-foot {
+    grid-column: 9 / 13;
+    margin-top: 72px;
+    align-self: end;
+    font-size: 13px; font-weight: 300; line-height: 1.7;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    border-top: 1px solid var(--hair);
+    padding-top: 16px;
+  }
+
+  /* — STATS SPREAD — */
+  .stat-row {
+    grid-column: 1 / 13;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--gut);
+    align-items: baseline;
+    padding: 40px 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  .stat-row:first-child { border-top: 1px solid var(--hair); }
+  .stat-number {
+    grid-column: 1 / 6;
+    font-size: clamp(72px, 13vw, 200px);
+    font-weight: 500;
+    line-height: 0.82;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-row:nth-child(1) .stat-number { color: var(--red); }
+  .stat-label {
+    grid-column: 7 / 13;
+    align-self: end;
+    font-size: clamp(15px, 1.6vw, 22px);
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    line-height: 1.3;
+    color: var(--ink);
+  }
+
+  /* — NEXT TRIMESTER SPREAD — */
+  .listening {
+    grid-column: 1 / 13;
+  }
+  .listening-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 24px;
+  }
+  .listening-date {
+    font-size: clamp(32px, 6.5vw, 96px);
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    overflow-wrap: break-word;
+  }
+  .listening-note {
+    grid-column: 1 / 8;
+    margin-top: 56px;
+    font-size: 15px; font-weight: 300; line-height: 1.7;
+    color: var(--ink);
+  }
+
+  /* — FOOTER — */
+  footer {
+    border-top: 1px solid var(--hair);
+  }
+  footer .grid { padding-top: 48px; padding-bottom: 48px; }
+  .footer-mark {
+    grid-column: 1 / 5;
+    font-size: 13px; font-weight: 400; letter-spacing: 0.04em; line-height: 1.8;
+    color: var(--ink);
+    overflow-wrap: break-word;
+  }
+  .footer-mark sup { font-size: 9px; }
+  .footer-mark a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  .footer-note {
+    grid-column: 6 / 11;
+    font-size: 11px; font-weight: 300; line-height: 1.8; letter-spacing: 0.02em;
+    color: var(--ink); opacity: 0.6;
+  }
+  .footer-note sup { font-size: 9px; }
+  .footer-rule {
+    grid-column: 12 / 13;
+    align-self: stretch;
+    border-left: 2px solid var(--red);
+  }
+
+  /* — MOBILE — */
+  @media (max-width: 760px) {
+    :root { --gut: 12px; }
+    nav { padding: 14px 18px; }
+    .scroll-cue { left: 18px; }
+    .grid { padding: 0 18px; }
+    .spread-head { margin-bottom: 40px; }
+    .spread-body { padding-bottom: 72px; }
+
+    .tagline { grid-column: 1 / 13; }
+    .lede { grid-column: 1 / 13; margin-top: 48px; }
+    .lede-foot { grid-column: 1 / 13; margin-top: 40px; align-self: auto; }
+
+    .stat-number { grid-column: 1 / 13; }
+    .stat-label { grid-column: 1 / 13; margin-top: 12px; align-self: auto; }
+
+    .listening-note { grid-column: 1 / 13; margin-top: 36px; }
+
+    .footer-mark { grid-column: 1 / 13; }
+    .footer-note { grid-column: 1 / 13; margin-top: 28px; }
+    .footer-rule { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal { opacity: 1; transform: none; transition: none; will-change: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- MINIMAL FIXED NAV -->
+<nav>
+  <span class="nav-wordmark">CRAC</span>
+  <a class="nav-right" href="mailto:hello@crac.fund">crac.fund</a>
+</nav>
+
+<!-- HERO = FULL VIEWPORT CANVAS -->
+<header class="hero">
+  <canvas id="waveCanvas"></canvas>
+  <div class="scroll-cue">scroll</div>
+</header>
+
+<main>
+
+  <!-- SPREAD 01 — TAGLINE / LEDE -->
+  <section class="spread">
+    <div class="spread-head">
+      <div class="grid">
+        <div class="spread-index">01</div>
+        <div class="spread-kicker">The Group</div>
+      </div>
+    </div>
+    <div class="spread-body">
+      <div class="grid">
+        <h2 class="tagline reveal">We meet three times a year.</h2>
+        <p class="lede reveal">
+          crac is a small group. Each trimester we put some money into something we like.
+        </p>
+        <p class="lede-foot reveal">
+          One decision per meeting.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPREAD 02 — STATS -->
+  <section class="spread">
+    <div class="spread-head">
+      <div class="grid">
+        <div class="spread-index">02</div>
+        <div class="spread-kicker">By the Numbers</div>
+      </div>
+    </div>
+    <div class="spread-body">
+      <div class="grid">
+        <div class="stat-row reveal">
+          <span class="stat-number">33⅓</span>
+          <span class="stat-label">revolutions / minute</span>
+        </div>
+        <div class="stat-row reveal">
+          <span class="stat-number">3</span>
+          <span class="stat-label">trimesters / year</span>
+        </div>
+        <div class="stat-row reveal">
+          <span class="stat-number">1</span>
+          <span class="stat-label">decision</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPREAD 03 — NEXT TRIMESTER -->
+  <section class="spread">
+    <div class="spread-head">
+      <div class="grid">
+        <div class="spread-index">03</div>
+        <div class="spread-kicker">Next Trimester</div>
+      </div>
+    </div>
+    <div class="spread-body">
+      <div class="grid">
+        <div class="listening reveal">
+          <p class="listening-label">Next trimester</p>
+          <p class="listening-date" id="meet">loading…</p>
+        </div>
+        <p class="listening-note reveal">
+          January, May, September.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="spread">
+    <div class="grid">
+      <p class="footer-mark reveal">
+        © CRAC — crac.fund<br>
+        <a href="mailto:hello@crac.fund">hello@crac.fund</a>
+      </p>
+      <div class="footer-rule reveal" aria-hidden="true"></div>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+// ── TRIMESTER DATE ───────────────────────────────────────────────────────────
+(function(){
+  const now = new Date(), starts = [0, 4, 8], yr = now.getFullYear();
+  let next = null;
+  for (const y of [yr, yr + 1]) {
+    for (const m of starts) {
+      const d = new Date(y, m, 1);
+      if (d > now) { next = d; break; }
+    }
+    if (next) break;
+  }
+  const fmt = next.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  document.getElementById('meet').textContent = fmt;
+})();
+
+// ── SCROLL REVEAL (IntersectionObserver, respects reduced motion) ────────────
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const items = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(el => el.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+  items.forEach(el => io.observe(el));
+  // Bottom fallback: elements near the document end can sit inside the negative
+  // rootMargin zone forever at max scroll — reveal whatever's left once
+  // scrolling bottoms out (checked once immediately for short documents).
+  const finishIfBottom = () => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      items.forEach(el => el.classList.add('in'));
+      window.removeEventListener('scroll', finishIfBottom);
+    }
+  };
+  window.addEventListener('scroll', finishIfBottom, { passive: true });
+  finishIfBottom();
+})();
+
+// ── WAVY WEIGHT CANVAS (black ink ribbons on white, full viewport) ───────────
+(function () {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const MAX_DPR = 2;
+  const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const LINE_COUNT   = 64;
+  const THIN_W       = 1.2;
+  const THICK_W      = 14;
+  const WAVE_AMP     = 7;
+  const WAVE_FREQ    = 0.0058;
+  const WAVE_SPEED   = 0.36;
+  const SEGMENTS     = 260;
+
+  const INKC = '#0a0a0a';
+
+  // ── "THE MAGNET" — Swiss-precise pointer deflection ─────────────────────────
+  const MAG_RADIUS  = 130;            // px of influence
+  const MAG_RADIUS2 = MAG_RADIUS * MAG_RADIUS;
+  const MAG_MAX     = 22;             // max displacement (px) away from pointer
+  const MAG_LERP    = 0.12;           // pointer smoothing per frame
+  let ptrActive = false;              // pointer currently inside hero bounds
+  let ptrTX = 0, ptrTY = 0;           // target (raw) pointer in CSS-canvas coords
+  let ptrX = 0, ptrY = 0;             // smoothed pointer position
+  let ptrStrength = 0;                // 0..1 eased global strength
+  let ptrClientX = 0, ptrClientY = 0; // last raw pointer in viewport (client) coords
+  let ptrSeen = false;                // have we ever received a pointer sample?
+
+  function shape(w) {
+    w = (w - 0.10) / 0.78;
+    if (w <= 0) return 0;
+    if (w >= 1) return 1;
+    return w * w * (3 - 2 * w);
+  }
+
+  let maskCanvas = null, maskCtx = null, maskData = null;
+  let precomputedWeights = null;
+
+  function buildMask() {
+    const pw = cssW || canvas.parentElement.clientWidth  || 640;
+    const ph = cssH || canvas.parentElement.clientHeight || 480;
+
+    if (!maskCanvas) {
+      maskCanvas = document.createElement('canvas');
+      maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    maskCanvas.width = pw;
+    maskCanvas.height = ph;
+    maskCtx.clearRect(0, 0, pw, ph);
+
+    let fontSize = Math.round(ph * 0.46);
+    maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    const maxW = pw * 0.88;
+    const measured = maskCtx.measureText('crac').width;
+    if (measured > maxW) {
+      fontSize = Math.floor(fontSize * maxW / measured);
+      maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    }
+    maskCtx.textAlign = 'center';
+    maskCtx.textBaseline = 'middle';
+    maskCtx.fillStyle = '#000000';
+    maskCtx.fillText('crac', pw / 2, ph / 2);
+
+    maskData = maskCtx.getImageData(0, 0, pw, ph).data;
+
+    const total = LINE_COUNT * (SEGMENTS + 1);
+    precomputedWeights = new Float32Array(total);
+    const blurRows = Math.max(1, Math.round(ph / LINE_COUNT * 0.34));
+
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const yCenter = (i + 0.5) / LINE_COUNT * ph;
+      const yMin = Math.max(0, Math.round(yCenter - blurRows));
+      const yMax = Math.min(ph - 1, Math.round(yCenter + blurRows));
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = Math.min(pw - 1, Math.max(0, Math.round(s / SEGMENTS * pw)));
+        let sum = 0, count = 0;
+        for (let ry = yMin; ry <= yMax; ry++) { sum += maskData[(ry * pw + x) * 4 + 3]; count++; }
+        precomputedWeights[i * (SEGMENTS + 1) + s] = sum / count / 255;
+      }
+    }
+  }
+
+  let currentDpr = 1;
+  let cssW = 0, cssH = 0;   // cached CSS-pixel panel size (avoids per-frame layout reads)
+  let rectLeft = 0, rectTop = 0;   // cached canvas viewport offset for pointer coords
+  function resize() {
+    const panel = canvas.parentElement;
+    const w = panel.clientWidth, h = panel.clientHeight;
+    if (w <= 0 || h <= 0) return;   // guard: don't build a 0×0 panel
+    cssW = w; cssH = h;
+    const rect = canvas.getBoundingClientRect();
+    rectLeft = rect.left; rectTop = rect.top;
+    currentDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    canvas.width  = Math.round(w * currentDpr);
+    canvas.height = Math.round(h * currentDpr);
+    // CSS size × dpr backing store; draw in CSS pixels.
+    ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
+    buildMask();
+  }
+
+  let startTime = null, rafId = null;
+  let onScreen = true;   // canvas intersecting viewport
+  const topX = new Float32Array(SEGMENTS + 1);
+  const topY = new Float32Array(SEGMENTS + 1);
+  const botY = new Float32Array(SEGMENTS + 1);
+
+  // Single place that decides whether the loop should be running.
+  function play() {
+    if (rafId) return;                          // already running
+    if (document.hidden || !onScreen) return;   // not allowed to run
+    startTime = null;                           // reset clock on resume to avoid jump
+    rafId = requestAnimationFrame(draw);
+  }
+  function stop() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+
+  function draw(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = (ts - startTime) * 0.001;
+    const pw = cssW, ph = cssH;   // cached from resize() — no per-frame layout read
+
+    ctx.clearRect(0, 0, pw, ph);   // transparent — white shows through
+
+    // Wait for the mask weights; keep polling via rAF until ready.
+    if (!precomputedWeights) { rafId = requestAnimationFrame(draw); return; }
+    rafId = null;   // claim the slot; re-armed below only if we keep animating
+
+    // ── Magnet: smooth pointer + ease global strength (skip under reduced motion).
+    if (!REDUCE) {
+      const targetStrength = ptrActive ? 1 : 0;
+      ptrStrength += (targetStrength - ptrStrength) * MAG_LERP;
+      ptrX += (ptrTX - ptrX) * MAG_LERP;
+      ptrY += (ptrTY - ptrY) * MAG_LERP;
+    }
+    const magOn = ptrStrength > 0.001;
+
+    ctx.fillStyle = INKC;
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const phase  = i * 0.31 + elapsed * WAVE_SPEED;
+      const phase2 = i * 0.17 + elapsed * WAVE_SPEED * 0.7 + 1.1;
+      const yBase  = (i + 0.5) / LINE_COUNT * ph;
+      const base   = i * (SEGMENTS + 1);
+
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = (s / SEGMENTS) * pw;
+        let y = yBase
+                + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+        let dx = 0;
+        // Point-charge deflection: push directly away from pointer, smoothstep falloff.
+        if (magOn) {
+          const ddx = x - ptrX, ddy = y - ptrY;
+          const d2 = ddx * ddx + ddy * ddy;
+          if (d2 < MAG_RADIUS2) {
+            const d = Math.sqrt(d2);
+            const t = 1 - d / MAG_RADIUS;             // 0..1, 1 at pointer
+            const fall = t * t * (3 - 2 * t);          // smoothstep falloff
+            const push = MAG_MAX * fall * ptrStrength;
+            const inv = d > 0.0001 ? push / d : 0;     // normalize direction
+            dx = ddx * inv;
+            y += ddy * inv;
+          }
+        }
+        const half = (THIN_W + (THICK_W - THIN_W) * shape(precomputedWeights[base + s])) * 0.5;
+        topX[s] = x + dx; topY[s] = y - half; botY[s] = y + half;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(topX[0], topY[0]);
+      for (let s = 1; s <= SEGMENTS; s++) ctx.lineTo(topX[s], topY[s]);
+      for (let s = SEGMENTS; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Reduced motion: render a single static frame, then stop the loop.
+    if (REDUCE) { rafId = null; return; }
+    rafId = requestAnimationFrame(draw);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop();
+    else play();
+  });
+
+  // ── Magnet pointer wiring (reduced motion = no interaction at all) ───────────
+  // Shared re-evaluation: map the last raw CLIENT coords onto the (possibly
+  // refreshed) cached rect, decide in/out of hero bounds, and update targets.
+  // Used by both pointermove and the scroll listener so a stationary pointer
+  // during scroll still tracks the correct canvas spot / eases out when it
+  // slides off the hero.
+  function reevalPointer() {
+    if (!ptrSeen) return;
+    const lx = ptrClientX - rectLeft;
+    const ly = ptrClientY - rectTop;
+    if (lx < 0 || ly < 0 || lx > cssW || ly > cssH) {
+      ptrActive = false;          // outside hero bounds → ease strength to 0
+      return;
+    }
+    if (!ptrActive) {             // first sample after (re)entry: snap, don't sweep
+      ptrX = lx; ptrY = ly;
+    }
+    ptrTX = lx; ptrTY = ly;
+    ptrActive = true;
+  }
+
+  if (!REDUCE) {
+    window.addEventListener('pointermove', (e) => {
+      ptrClientX = e.clientX; ptrClientY = e.clientY;
+      ptrSeen = true;
+      reevalPointer();
+    }, { passive: true });
+    const release = () => { ptrActive = false; };   // ease strength to 0
+    window.addEventListener('pointerleave', release);
+    window.addEventListener('blur', release);
+
+    // Passive, rAF-throttled scroll: the page slides under a stationary pointer
+    // (no pointermove fires), so refresh the cached rect and re-evaluate from the
+    // saved client coords. Outside hero → ease out; inside → retrack canvas spot.
+    let scrollTick = false;
+    window.addEventListener('scroll', () => {
+      if (scrollTick) return;
+      scrollTick = true;
+      requestAnimationFrame(() => {
+        scrollTick = false;
+        const rect = canvas.getBoundingClientRect();
+        rectLeft = rect.left; rectTop = rect.top;
+        reevalPointer();
+      });
+    }, { passive: true });
+  }
+
+  // Pause the rAF loop whenever the hero canvas scrolls out of view.
+  if ('IntersectionObserver' in window) {
+    const vis = new IntersectionObserver((entries) => {
+      onScreen = entries[0].isIntersecting;
+      if (onScreen) play(); else stop();
+    }, { threshold: 0 });
+    vis.observe(canvas);
+  }
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      resize();
+      // resize() rebuilds the mask; make sure we keep animating if visible.
+      play();
+    }, 150);
+  });
+
+  // Build immediately (hero has real height regardless of fonts),
+  // then rebuild once the webfont is ready so the mask uses Space Grotesk metrics.
+  resize();
+  play();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { resize(); play(); });
+  }
+})();
+</script>
+</body>
+</html>

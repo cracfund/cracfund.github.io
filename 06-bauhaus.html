@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRAC — crac.fund</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #efe7d6;
+    --black: #111010;
+    --red: #e0301e;
+    --blue: #1d36b8;
+    --yellow: #f6bf02;
+    --font: 'Space Grotesk', sans-serif;
+  }
+
+  html { background: var(--cream); }
+  body {
+    background: var(--cream);
+    color: var(--black);
+    font-family: var(--font);
+    font-weight: 300;
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+  }
+
+  /* ── NAV (minimal, fixed, overlaid on hero) ───────────────────────────────── */
+  /* Nav overlays every section as you scroll. mix-blend multiply turns the black
+     text invisible over the dark red/blue blocks, so use a solid cream bar instead —
+     black-on-cream reads everywhere and matches the hero background seamlessly. */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px;
+    background: var(--cream);
+    border-bottom: 2px solid var(--black);
+  }
+  .nav-left { display: flex; align-items: center; gap: 12px; }
+  .nav-logo svg { display: block; width: 30px; height: 30px; }
+  .nav-wordmark { font-size: 15px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+  .nav-right { font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--black); text-decoration: none; border-bottom: 2px solid var(--black); padding-bottom: 1px; text-transform: uppercase; }
+  .nav-right:hover { color: var(--red); border-color: var(--red); }
+
+  /* ── HERO — the canvas IS the hero, full viewport ─────────────────────────── */
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100svh;
+    background: var(--cream);
+    overflow: hidden;
+    border-bottom: 6px solid var(--black);
+  }
+  #waveCanvas { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+
+  .scroll-cue {
+    position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%);
+    z-index: 20;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--black); mix-blend-mode: multiply;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .scroll-cue .bar { width: 2px; height: 26px; background: var(--black); animation: cueDrop 1.8s ease-in-out infinite; }
+  @keyframes cueDrop { 0%,100% { transform: scaleY(0.4); transform-origin: top; opacity: 0.4; } 50% { transform: scaleY(1); transform-origin: top; opacity: 1; } }
+
+  /* ── SCROLL SECTIONS — full-bleed color blocks ────────────────────────────── */
+  .block {
+    position: relative;
+    padding: clamp(72px, 11vh, 140px) clamp(28px, 7vw, 120px);
+    border-bottom: 6px solid var(--black);
+    overflow: hidden;
+  }
+  .block-inner { position: relative; z-index: 2; max-width: 1100px; margin: 0 auto; }
+
+  .block-red    { background: var(--red);    color: var(--cream); }
+  .block-blue   { background: var(--blue);   color: var(--cream); }
+  .block-yellow { background: var(--yellow); color: var(--black); }
+  .block-cream  { background: var(--cream);  color: var(--black); }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase;
+    margin-bottom: 26px; display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::before { content: ''; display: block; width: 36px; height: 3px; background: currentColor; flex-shrink: 0; }
+
+  /* RED — tagline / lede */
+  .lede-text { font-size: clamp(26px, 4vw, 46px); font-weight: 700; line-height: 1.12; letter-spacing: -0.02em; max-width: 16ch; }
+  /* yellow on red fails contrast (2.7:1); knock emphasis out in black for a Bauhaus pop (4.2:1) */
+  .lede-text em { font-style: normal; color: var(--black); }
+  .tagline { font-size: clamp(16px, 1.8vw, 21px); font-weight: 300; line-height: 1.55; max-width: 38ch; margin-top: 32px; }
+
+  /* BLUE — stats */
+  .stats-head { font-size: clamp(22px, 3vw, 34px); font-weight: 700; letter-spacing: -0.01em; margin-bottom: 48px; max-width: 20ch; line-height: 1.1; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 4px solid var(--cream); }
+  .stat-item { padding: 36px 28px 30px 0; border-right: 4px solid var(--cream); }
+  .stat-item:last-child { border-right: none; padding-right: 0; }
+  .stat-number { font-size: clamp(56px, 8vw, 92px); font-weight: 700; letter-spacing: -0.03em; line-height: 0.9; display: block; margin-bottom: 18px; }
+  .stat-label { font-size: 13px; font-weight: 500; letter-spacing: 0.04em; line-height: 1.45; text-transform: uppercase; opacity: 0.9; }
+
+  /* YELLOW — next trimester */
+  .listen-head { font-size: clamp(22px, 3vw, 34px); font-weight: 700; letter-spacing: -0.01em; margin-bottom: 28px; line-height: 1.1; max-width: 22ch; }
+  .next-listening {
+    display: inline-block; max-width: 100%;
+    font-size: clamp(18px, 3.4vw, 40px); font-weight: 700; letter-spacing: -0.01em;
+    line-height: 1.2;
+    background: var(--black); color: var(--yellow);
+    padding: 18px 28px;
+    border: 4px solid var(--black);
+    overflow-wrap: break-word;
+  }
+  .listen-note { font-size: 14px; font-weight: 300; line-height: 1.6; margin-top: 30px; max-width: 44ch; }
+
+  /* FOOTER (cream) */
+  footer.block-cream { padding-top: clamp(56px, 8vh, 96px); padding-bottom: clamp(48px, 7vh, 80px); border-bottom: none; }
+  .footer-grid { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 28px; }
+  .footer-wordmark { font-size: clamp(48px, 9vw, 120px); font-weight: 700; letter-spacing: -0.04em; line-height: 0.85; }
+  .footer-meta { font-size: 13px; font-weight: 400; letter-spacing: 0.04em; line-height: 1.9; text-align: right; }
+  .footer-meta a { color: var(--black); text-decoration: underline; text-underline-offset: 3px; }
+  .footer-meta a:hover { color: var(--red); }
+  .footer-footnote { font-size: 11px; font-weight: 300; opacity: 0.6; max-width: 480px; line-height: 1.7; letter-spacing: 0.02em; margin-top: 44px; padding-top: 24px; border-top: 3px solid var(--black); }
+  .footer-footnote sup { font-size: 9px; }
+
+  /* ── GEOMETRIC MOTIFS (concentric circles / triangle), echo the record logo ─ */
+  .motif { position: absolute; z-index: 1; pointer-events: none; }
+  .motif--circle-red { right: -120px; top: -120px; width: 420px; height: 420px; }
+  .motif--triangle-blue { right: -60px; bottom: -90px; width: 380px; height: 380px; opacity: 0.9; }
+  /* sunk low so only an arc peeks from the corner — its rings must not run behind the footnote text */
+  .motif--circle-yellow { left: -100px; bottom: -320px; width: 380px; height: 380px; }
+  /* below 1100px the stats grid reaches the triangle's corner — shrink + sink it clear of the labels */
+  @media (max-width: 1100px) {
+    .motif--triangle-blue { width: 240px; height: 240px; right: -80px; bottom: -180px; }
+  }
+  @media (max-width: 900px) {
+    .motif--circle-red { width: 260px; height: 260px; right: -90px; top: -90px; }
+    .motif--circle-yellow { width: 240px; height: 240px; left: -80px; bottom: -200px; }
+  }
+
+  /* ── SCROLL REVEAL ────────────────────────────────────────────────────────── */
+  /* fail-safe: only hide reveals once JS has confirmed it's running. No-JS / JS error -> all text visible. */
+  .js .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.7s cubic-bezier(.2,.7,.2,1), transform 0.7s cubic-bezier(.2,.7,.2,1); }
+  .js .reveal.is-visible { opacity: 1; transform: none; }
+  .reveal[data-delay="1"] { transition-delay: 0.08s; }
+  .reveal[data-delay="2"] { transition-delay: 0.16s; }
+  .reveal[data-delay="3"] { transition-delay: 0.24s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .scroll-cue .bar { animation: none; }
+  }
+
+  /* ── MOBILE ───────────────────────────────────────────────────────────────── */
+  @media (max-width: 720px) {
+    nav { padding: 14px 18px; }
+    .stats-grid { grid-template-columns: 1fr; border-top: none; }
+    .stat-item { border-right: none; border-top: 4px solid var(--cream); padding: 28px 0; }
+    .footer-grid { flex-direction: column; }
+    .footer-meta { text-align: left; }
+  }
+</style>
+<script>document.documentElement.className += ' js';</script>
+</head>
+<body>
+
+<!-- NAV (minimal, overlaid) -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo" aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="14.5" stroke="#111010" stroke-width="2"/>
+        <circle cx="16" cy="16" r="10" stroke="#111010" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="5.5" stroke="#111010" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="1.5" fill="#111010"/>
+      </svg>
+    </div>
+    <span class="nav-wordmark">CRAC</span>
+  </div>
+  <a class="nav-right" href="mailto:hello@crac.fund">crac.fund</a>
+</nav>
+
+<!-- HERO — wavy "crac" canvas, full viewport -->
+<section class="hero">
+  <canvas id="waveCanvas"></canvas>
+  <div class="scroll-cue" aria-hidden="true">
+    <span>scroll</span>
+    <span class="bar"></span>
+  </div>
+</section>
+
+<!-- RED — tagline / lede -->
+<section class="block block-red">
+  <svg class="motif motif--circle-red" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+    <circle cx="50" cy="50" r="48" stroke="#efe7d6" stroke-width="2.5"/>
+    <circle cx="50" cy="50" r="34" stroke="#efe7d6" stroke-width="2.5"/>
+    <circle cx="50" cy="50" r="20" stroke="#efe7d6" stroke-width="2.5"/>
+    <circle cx="50" cy="50" r="6" fill="#efe7d6"/>
+  </svg>
+  <div class="block-inner">
+    <p class="eyebrow reveal">January · May · September</p>
+    <p class="lede-text reveal" data-delay="1">
+      crac is a small group.
+    </p>
+    <p class="tagline reveal" data-delay="2">
+      Each trimester we put some money into something we like.
+    </p>
+  </div>
+</section>
+
+<!-- BLUE — stats -->
+<section class="block block-blue">
+  <svg class="motif motif--triangle-blue" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+    <path d="M50 6 L94 88 L6 88 Z" stroke="#efe7d6" stroke-width="2.5"/>
+    <path d="M50 30 L78 80 L22 80 Z" stroke="#efe7d6" stroke-width="2.5"/>
+    <circle cx="50" cy="66" r="6" fill="#efe7d6"/>
+  </svg>
+  <div class="block-inner">
+    <h2 class="stats-head reveal">By the numbers.</h2>
+    <div class="stats-grid">
+      <div class="stat-item reveal" data-delay="1">
+        <span class="stat-number">33⅓</span>
+        <span class="stat-label">revolutions / minute</span>
+      </div>
+      <div class="stat-item reveal" data-delay="2">
+        <span class="stat-number">3</span>
+        <span class="stat-label">trimesters / year</span>
+      </div>
+      <div class="stat-item reveal" data-delay="3">
+        <span class="stat-number">1</span>
+        <span class="stat-label">decision</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- YELLOW — next trimester -->
+<section class="block block-yellow">
+  <svg class="motif motif--circle-yellow" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+    <circle cx="50" cy="50" r="48" stroke="#111010" stroke-width="2.5"/>
+    <circle cx="50" cy="50" r="34" stroke="#111010" stroke-width="2.5"/>
+    <circle cx="50" cy="50" r="20" stroke="#111010" stroke-width="2.5"/>
+    <circle cx="50" cy="50" r="6" fill="#111010"/>
+  </svg>
+  <div class="block-inner">
+    <p class="eyebrow reveal">The calendar</p>
+    <h2 class="listen-head reveal" data-delay="1">We meet three times a year.</h2>
+    <span class="next-listening reveal" id="meet" data-delay="2">next trimester — January, May &amp; September</span>
+    <p class="listen-note reveal" data-delay="3">
+      One decision per meeting.
+    </p>
+  </div>
+</section>
+
+<!-- FOOTER (cream) -->
+<footer class="block block-cream">
+  <div class="block-inner">
+    <div class="footer-grid">
+      <div class="reveal">
+        <div class="footer-wordmark">crac</div>
+      </div>
+      <div class="footer-meta reveal" data-delay="1">
+        © crac — crac.fund<br>
+        <a href="mailto:hello@crac.fund">hello@crac.fund</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── TRIMESTER DATE ───────────────────────────────────────────────────────────
+(function(){
+  try {
+    const el = document.getElementById('meet');
+    if (!el) return;
+    const now = new Date(), starts = [0, 4, 8], yr = now.getFullYear();
+    let next = null;
+    for (const y of [yr, yr + 1]) {
+      for (const m of starts) {
+        const d = new Date(y, m, 1);
+        if (d > now) { next = d; break; }
+      }
+      if (next) break;
+    }
+    if (!next) return;          // leaves the static "loading…" fallback rather than throwing
+    const fmt = next.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    el.textContent = 'next trimester — ' + fmt;
+  } catch (e) {}
+})();
+
+// ── SCROLL REVEAL (IntersectionObserver) ─────────────────────────────────────
+(function(){
+  const items = document.querySelectorAll('.reveal');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(el => el.classList.add('is-visible'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) {
+        e.target.classList.add('is-visible');
+        io.unobserve(e.target);
+      }
+    }
+  }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+  items.forEach(el => io.observe(el));
+  // Bottom fallback: elements near the document end can sit inside the negative
+  // rootMargin zone forever at max scroll — reveal whatever's left once
+  // scrolling bottoms out (checked once immediately for short documents).
+  const finishIfBottom = () => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      items.forEach(el => el.classList.add('is-visible'));
+      window.removeEventListener('scroll', finishIfBottom);
+    }
+  };
+  window.addEventListener('scroll', finishIfBottom, { passive: true });
+  finishIfBottom();
+})();
+
+// ── WAVY WEIGHT CANVAS (filled ribbons, black ink on cream) ──────────────────
+(function () {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const MAX_DPR = 2;
+
+  const LINE_COUNT   = 72;
+  const THIN_W       = 1.6;
+  const THICK_W      = 16;
+  const WAVE_AMP     = 7;
+  const WAVE_FREQ    = 0.0058;
+  const WAVE_SPEED   = 0.42;
+  const SEGMENTS     = 160;   // low-freq waves stay smooth; 160 cuts ~38% of per-frame sin/path work vs 260
+
+  const INKC = '#111010';
+
+  // ── OFFSET PRINT POINTER (slipped print-plates / interleaved comb) ───────────
+  // No displacement of the geometry's silhouette: within COMB_RADIUS the lines
+  // shear purely HORIZONTALLY in alternating directions — even lines slide +x,
+  // odd lines slide -x — up to COMB_SHIFT at the cursor. Vertical positions and
+  // ribbon widths are untouched, so "crac" never tears; it just locally combs
+  // into mis-registered plates. Falloff is a squared-distance smoothstep, sign
+  // taken from the line index.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const COMB_RADIUS  = 150;        // px reach of the offset-print comb
+  const COMB_R2      = COMB_RADIUS * COMB_RADIUS;
+  const COMB_SHIFT   = 10;         // px max horizontal slip at the cursor
+  const PTR_LERP     = 0.12;       // snappy pointer smoothing suits this page
+  let ptrActive = false;           // pointer currently over hero
+  let ptrTargetX = 0, ptrTargetY = 0;  // raw canvas-local target
+  let ptrX = 0, ptrY = 0;          // smoothed position
+  let combStrength = 0;            // eases 0..1, ->0 on leave/blur
+  let rectLeft = 0, rectTop = 0;   // canvas rect, cached in resize()/scroll
+  // Last raw pointer position in CLIENT (viewport) coords. Kept so a scroll —
+  // which fires no pointermove — can re-derive the canvas-local target against a
+  // fresh rect, instead of leaving the comb stuck on a stale spot.
+  let clientX = 0, clientY = 0;
+  let havePointer = false;         // have we seen a pointer at all yet?
+
+  function shape(w) {
+    w = (w - 0.10) / 0.78;
+    if (w <= 0) return 0;
+    if (w >= 1) return 1;
+    return w * w * (3 - 2 * w);
+  }
+
+  let maskCanvas = null, maskCtx = null, maskData = null;
+  let precomputedWeights = null;
+
+  function buildMask() {
+    const panel = canvas.parentElement;
+    const pw = panel.clientWidth  || 640;
+    const ph = panel.clientHeight || 480;
+
+    if (!maskCanvas) {
+      maskCanvas = document.createElement('canvas');
+      maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    maskCanvas.width = pw;
+    maskCanvas.height = ph;
+    maskCtx.clearRect(0, 0, pw, ph);
+
+    let fontSize = Math.round(ph * 0.46);
+    maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    const maxW = pw * 0.88;
+    const measured = maskCtx.measureText('crac').width;
+    if (measured > maxW) {
+      fontSize = Math.floor(fontSize * maxW / measured);
+      maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    }
+    maskCtx.textAlign = 'center';
+    maskCtx.textBaseline = 'middle';
+    maskCtx.fillStyle = '#000000';
+    maskCtx.fillText('crac', pw / 2, ph / 2);
+
+    maskData = maskCtx.getImageData(0, 0, pw, ph).data;
+
+    const total = LINE_COUNT * (SEGMENTS + 1);
+    precomputedWeights = new Float32Array(total);
+    const blurRows = Math.max(1, Math.round(ph / LINE_COUNT * 0.34));
+
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const yCenter = (i + 0.5) / LINE_COUNT * ph;
+      const yMin = Math.max(0, Math.round(yCenter - blurRows));
+      const yMax = Math.min(ph - 1, Math.round(yCenter + blurRows));
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = Math.min(pw - 1, Math.max(0, Math.round(s / SEGMENTS * pw)));
+        let sum = 0, count = 0;
+        for (let ry = yMin; ry <= yMax; ry++) { sum += maskData[(ry * pw + x) * 4 + 3]; count++; }
+        precomputedWeights[i * (SEGMENTS + 1) + s] = sum / count / 255;
+      }
+    }
+  }
+
+  let currentDpr = 1;
+  function resize() {
+    const panel = canvas.parentElement;
+    const w = panel.clientWidth, h = panel.clientHeight;
+    if (w <= 0 || h <= 0) return;           // guard against a 0×0 / hidden panel
+    currentDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    canvas.width = Math.round(w * currentDpr);
+    canvas.height = Math.round(h * currentDpr);
+    ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
+    const rect = canvas.getBoundingClientRect();
+    rectLeft = rect.left; rectTop = rect.top;
+    buildMask();
+  }
+
+  let startTime = null, rafId = null;
+  const topX = new Float32Array(SEGMENTS + 1);
+  const topY = new Float32Array(SEGMENTS + 1);
+  const botY = new Float32Array(SEGMENTS + 1);
+
+  function draw(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = (ts - startTime) * 0.001;
+    const panel = canvas.parentElement;
+    const pw = panel.clientWidth, ph = panel.clientHeight;
+
+    ctx.clearRect(0, 0, pw, ph);
+
+    if (!precomputedWeights) { rafId = requestAnimationFrame(draw); return; }
+
+    // Smooth pointer toward target; ease strength toward active state. Reduced
+    // motion never engages (combStrength stays pinned at 0).
+    const wantStrength = (ptrActive && !reduceMotion) ? 1 : 0;
+    combStrength += (wantStrength - combStrength) * PTR_LERP;
+    ptrX += (ptrTargetX - ptrX) * PTR_LERP;
+    ptrY += (ptrTargetY - ptrY) * PTR_LERP;
+    const combOn = combStrength > 0.001;
+    const px = ptrX, py = ptrY;
+    const shiftAmt = COMB_SHIFT * combStrength;
+
+    ctx.fillStyle = INKC;
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const phase  = i * 0.31 + elapsed * WAVE_SPEED;
+      const phase2 = i * 0.17 + elapsed * WAVE_SPEED * 0.7 + 1.1;
+      const yBase  = (i + 0.5) / LINE_COUNT * ph;
+      const base   = i * (SEGMENTS + 1);
+
+      // Offset print: this whole line shears horizontally, sign alternating by
+      // index (even +x, odd -x). Cheap per-line band skip — if the line's base y
+      // is well outside the comb's vertical reach, no point can be near it.
+      const lineCombs = combOn && Math.abs(yBase - py) < COMB_RADIUS;
+      const dirShift  = (i & 1) ? -shiftAmt : shiftAmt;
+
+      for (let s = 0; s <= SEGMENTS; s++) {
+        let x = (s / SEGMENTS) * pw;
+        let y = yBase
+                + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+
+        // Offset print: slip this segment in x only, scaled by a squared-distance
+        // smoothstep to the smoothed pointer. y and width stay put, so the word
+        // never tears — the plates just mis-register near the cursor.
+        if (lineCombs) {
+          const dx = x - px, dy = y - py;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < COMB_R2) {
+            let t = 1 - d2 / COMB_R2;           // 1 at center, 0 at edge (sq falloff)
+            t = t * t * (3 - 2 * t);            // smoothstep
+            x += dirShift * t;
+          }
+        }
+
+        const half = (THIN_W + (THICK_W - THIN_W) * shape(precomputedWeights[base + s])) * 0.5;
+        topX[s] = x; topY[s] = y - half; botY[s] = y + half;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(topX[0], topY[0]);
+      for (let s = 1; s <= SEGMENTS; s++) ctx.lineTo(topX[s], topY[s]);
+      for (let s = SEGMENTS; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    rafId = requestAnimationFrame(draw);
+  }
+
+  // Run only while the hero is on-screen AND the tab is visible. This page has a lot
+  // of content below the hero, so pausing the rAF on scroll-out is the big win.
+  let started = false;          // fonts ready / first start has happened
+  let onScreen = true;          // canvas intersecting viewport
+  function pageVisible() { return !document.hidden; }
+
+  function play() {
+    if (!started || rafId || !onScreen || !pageVisible()) return;
+    startTime = null;           // reset so the wave doesn't jump after a pause
+    rafId = requestAnimationFrame(draw);
+  }
+  function pause() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (pageVisible()) play(); else pause();
+  });
+
+  if ('IntersectionObserver' in window) {
+    const vis = new IntersectionObserver((entries) => {
+      onScreen = entries[0].isIntersecting;
+      if (onScreen) play(); else pause();
+    }, { threshold: 0 });
+    vis.observe(canvas);
+  }
+
+  // Shared re-evaluation: map the last raw CLIENT coords through the cached rect
+  // to canvas-local, then decide in/out of hero. Used by both pointermove (fresh
+  // client coords) and scroll (same client coords, but the rect has shifted).
+  function reevaluatePointer() {
+    if (!havePointer) return;
+    const x = clientX - rectLeft, y = clientY - rectTop;
+    const pw = canvas.parentElement.clientWidth, ph = canvas.parentElement.clientHeight;
+    if (x >= 0 && x <= pw && y >= 0 && y <= ph) {
+      // First engage: snap smoothed pos to avoid a sweep-in from a stale point.
+      if (!ptrActive) { ptrX = x; ptrY = y; }
+      ptrTargetX = x; ptrTargetY = y;
+      ptrActive = true;
+    } else {
+      // Outside hero (including scrolled past it): ease the comb out.
+      ptrActive = false;
+    }
+  }
+
+  // Pointer tracking for the comb. Reduced motion opts out entirely.
+  if (!reduceMotion) {
+    window.addEventListener('pointermove', (e) => {
+      clientX = e.clientX; clientY = e.clientY;
+      havePointer = true;
+      reevaluatePointer();
+    }, { passive: true });
+    const release = () => { ptrActive = false; };
+    window.addEventListener('pointerleave', release);
+    window.addEventListener('blur', release);
+
+    // Scrolling with a stationary mouse fires no pointermove, so without this the
+    // comb stays engaged on a stale rect — it keeps shearing the lines
+    // as the hero slides away. Refresh the cached rect and re-evaluate from the
+    // saved client coords, rAF-throttled so we touch getBoundingClientRect at most
+    // once per frame (no steady-state per-frame layout reads — resize + scroll only).
+    let scrollRaf = 0;
+    window.addEventListener('scroll', () => {
+      if (scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0;
+        const rect = canvas.getBoundingClientRect();
+        rectLeft = rect.left; rectTop = rect.top;
+        reevaluatePointer();
+      });
+    }, { passive: true });
+  }
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 150);
+  });
+
+  document.fonts.ready.then(() => {
+    resize();
+    started = true;
+    play();
+  });
+})();
+</script>
+</body>
+</html>

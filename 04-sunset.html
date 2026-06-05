@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRAC — crac.fund</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Add .js BEFORE first paint so reveal elements hide without flashing, but only when JS runs. -->
+<script>document.documentElement.classList.add('js');</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:    #150a1f;   /* deep plum/ink for scroll sections */
+    --plum:   #1e0d2c;
+    --indigo: #2a1040;   /* gradient top */
+    --rust:   #b23a2a;   /* gradient middle */
+    --amber:  #f6bf02;   /* gradient horizon */
+    --warm:   #f3d9b0;   /* warm text on dark */
+    --warm-dim: rgba(243,217,176,0.62);
+    --font: 'Space Grotesk', sans-serif;
+  }
+
+  html { background: var(--ink); }
+  body {
+    background: var(--ink);
+    color: var(--warm);
+    font-family: var(--font);
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── FIXED MINIMAL NAV ─────────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 36px;
+    pointer-events: none;
+  }
+  nav > * { pointer-events: auto; }
+  .nav-left { display: flex; align-items: center; gap: 13px; }
+  .nav-logo svg { display: block; width: 30px; height: 30px; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5)); }
+  .nav-wordmark {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--warm); text-shadow: 0 1px 6px rgba(0,0,0,0.55);
+  }
+  .nav-right {
+    font-size: 12px; font-weight: 400; letter-spacing: 0.08em;
+    color: var(--warm); text-decoration: none;
+    border-bottom: 1.5px solid rgba(243,217,176,0.6); padding-bottom: 1px;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.55);
+  }
+  .nav-right:hover { color: var(--amber); border-color: var(--amber); }
+
+  /* ── HERO: full-viewport canvas, edge to edge ──────────────────────────── */
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100svh;
+    min-height: 480px;
+    overflow: hidden;
+    /* deep warm sunset gradient behind the wave ribbons */
+    background:
+      linear-gradient(180deg,
+        #2a1040 0%,
+        #3c1542 26%,
+        #7a2733 56%,
+        #b23a2a 76%,
+        #e07a1c 90%,
+        #f6bf02 100%);
+  }
+  #waveCanvas { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+
+  /* soft atmospheric haze near the horizon + vignette */
+  .hero::after {
+    content: '';
+    position: absolute; inset: 0; pointer-events: none; z-index: 2;
+    background:
+      radial-gradient(120% 60% at 50% 108%, rgba(246,191,2,0.35), rgba(246,191,2,0) 60%),
+      radial-gradient(140% 120% at 50% 35%, rgba(0,0,0,0) 55%, rgba(10,4,18,0.45) 100%);
+    mix-blend-mode: screen;
+  }
+  .hero-vignette {
+    position: absolute; inset: 0; pointer-events: none; z-index: 3;
+    background: radial-gradient(130% 130% at 50% 50%, rgba(0,0,0,0) 62%, rgba(8,3,15,0.5) 100%);
+  }
+
+  /* scroll cue */
+  /* Cue sits over the bright amber horizon — use dark ink text for legibility there. */
+  .scroll-cue {
+    position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+    z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: #2a1040; opacity: 0.92;
+    font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
+    text-shadow: 0 1px 3px rgba(255,255,255,0.45);
+  }
+  .scroll-cue .line {
+    width: 1px; height: 34px;
+    background: linear-gradient(180deg, rgba(42,16,64,0.85), rgba(42,16,64,0));
+    animation: cueDrift 2.4s ease-in-out infinite;
+  }
+  @keyframes cueDrift {
+    0%, 100% { transform: scaleY(0.55); opacity: 0.45; transform-origin: top; }
+    50%      { transform: scaleY(1); opacity: 1; transform-origin: top; }
+  }
+
+  /* ── SCROLL CONTENT (deep plum/ink, amber accents) ─────────────────────── */
+  main { position: relative; z-index: 5; background: var(--ink); }
+
+  .band { padding: 14vh 36px; max-width: 1180px; margin: 0 auto; }
+  .band + .band { border-top: 1px solid rgba(243,217,176,0.10); }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--amber); margin-bottom: 26px; display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::before { content: ''; display: block; width: 26px; height: 2px; background: var(--amber); flex-shrink: 0; }
+
+  /* tagline band */
+  .tagline {
+    font-size: clamp(26px, 4.2vw, 46px); font-weight: 300; line-height: 1.22;
+    letter-spacing: -0.01em; max-width: 16ch; color: var(--warm);
+  }
+  .tagline strong { font-weight: 600; color: #fff; }
+  .next-listening {
+    margin-top: 40px;
+    font-size: 13px; font-weight: 400; letter-spacing: 0.04em; color: var(--warm);
+    border-left: 3px solid var(--amber); padding: 12px 18px;
+    display: inline-block; max-width: 100%; background: rgba(246,191,2,0.05);
+    overflow-wrap: anywhere;
+  }
+
+  /* lede band */
+  .lede-text {
+    font-size: clamp(19px, 2.4vw, 26px); font-weight: 300; line-height: 1.6;
+    max-width: 30ch; color: var(--warm);
+  }
+  .lede-text strong { font-weight: 600; color: #fff; }
+  .lede-note { margin-top: 28px; font-size: 13px; color: var(--warm-dim); line-height: 1.7; max-width: 42ch; letter-spacing: 0.02em; }
+
+  /* stats band */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid rgba(243,217,176,0.16); }
+  .stat-item {
+    padding: 40px 28px 40px 0; border-bottom: 1px solid rgba(243,217,176,0.16);
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .stat-item + .stat-item { padding-left: 28px; border-left: 1px solid rgba(243,217,176,0.10); }
+  .stat-number { font-size: clamp(48px, 6vw, 72px); font-weight: 700; letter-spacing: -0.03em; line-height: 0.9; }
+  .stat-label { font-size: 13px; font-weight: 300; letter-spacing: 0.04em; line-height: 1.5; color: var(--warm-dim); }
+  .stat-item:nth-child(1) .stat-number { color: var(--amber); }
+  .stat-item:nth-child(2) .stat-number { color: var(--rust); }
+  .stat-item:nth-child(3) .stat-number { color: var(--warm); }
+
+  /* footer */
+  footer {
+    padding: 9vh 36px 8vh; max-width: 1180px; margin: 0 auto;
+    border-top: 1px solid rgba(243,217,176,0.10);
+    display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 28px;
+  }
+  .footer-left { font-size: 12px; font-weight: 300; letter-spacing: 0.05em; color: var(--warm-dim); line-height: 1.8; overflow-wrap: anywhere; }
+  .footer-left a { color: var(--warm); text-decoration: underline; text-underline-offset: 2px; }
+  .footer-left sup { font-size: 9px; }
+  .footer-footnote { font-size: 10px; font-weight: 300; color: rgba(243,217,176,0.58); max-width: 44ch; line-height: 1.8; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+
+  /* ── REVEAL ANIMATION (IntersectionObserver) ───────────────────────────── */
+  /* Fail-safe: only hide reveal elements when JS is active (html.js). With no
+     JS, or if the reveal script throws before adding .js, all text stays visible. */
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(34px);
+    transition: opacity 0.9s cubic-bezier(.16,.7,.3,1), transform 0.9s cubic-bezier(.16,.7,.3,1);
+    will-change: opacity, transform;
+  }
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal { opacity: 1; transform: none; transition: none; }
+    .scroll-cue .line { animation: none; }
+  }
+
+  /* ── MOBILE ────────────────────────────────────────────────────────────── */
+  @media (max-width: 760px) {
+    nav { padding: 16px 20px; }
+    .band { padding: 12vh 22px; }
+    footer { padding: 8vh 22px; flex-direction: column; align-items: flex-start; }
+    .stats-grid { grid-template-columns: 1fr; border-top: none; }
+    .stat-item { padding: 26px 0; border-left: none !important; padding-left: 0 !important; }
+    .stat-item:first-child { border-top: 1px solid rgba(243,217,176,0.16); }
+    .footer-footnote { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- MINIMAL FIXED NAV -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo" aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="14.5" stroke="#f3d9b0" stroke-width="2"/>
+        <circle cx="16" cy="16" r="10" stroke="#f3d9b0" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="5.5" stroke="#f3d9b0" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="1.5" fill="#f6bf02"/>
+      </svg>
+    </div>
+    <span class="nav-wordmark">CRAC</span>
+  </div>
+  <a class="nav-right" href="mailto:hello@crac.fund">crac.fund</a>
+</nav>
+
+<!-- HERO — full-viewport sunset canvas spelling "crac" -->
+<section class="hero">
+  <canvas id="waveCanvas"></canvas>
+  <div class="hero-vignette" aria-hidden="true"></div>
+  <div class="scroll-cue" aria-hidden="true">
+    <span>scroll</span>
+    <span class="line"></span>
+  </div>
+</section>
+
+<!-- SCROLL CONTENT -->
+<main>
+  <!-- TAGLINE -->
+  <section class="band">
+    <p class="eyebrow reveal">January · May · September</p>
+    <h1 class="tagline reveal">We meet three times a year.</h1>
+    <span class="next-listening reveal" id="meet">next trimester — January, May &amp; September</span>
+  </section>
+
+  <!-- LEDE -->
+  <section class="band">
+    <p class="eyebrow reveal">The Group</p>
+    <p class="lede-text reveal">
+      crac is a <strong>small group</strong>. Each trimester we put some money into something we like.
+    </p>
+    <p class="lede-note reveal">One decision per meeting.</p>
+  </section>
+
+  <!-- STATS -->
+  <section class="band">
+    <p class="eyebrow reveal">By the Numbers</p>
+    <div class="stats-grid">
+      <div class="stat-item reveal">
+        <span class="stat-number">33⅓</span>
+        <span class="stat-label">revolutions / minute</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-number">3</span>
+        <span class="stat-label">trimesters / year</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-number">1</span>
+        <span class="stat-label">decision</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p class="footer-left reveal">
+      © CRAC — crac.fund<br>
+      <a href="mailto:hello@crac.fund">hello@crac.fund</a>
+    </p>
+  </footer>
+</main>
+
+<script>
+// ── TRIMESTER "NEXT TRIMESTER" DATE ──────────────────────────────────────────
+(function(){
+  try {
+    const now = new Date(), starts = [0, 4, 8], yr = now.getFullYear();
+    let next = null;
+    for (const y of [yr, yr + 1]) {
+      for (const m of starts) {
+        const d = new Date(y, m, 1);
+        if (d > now) { next = d; break; }
+      }
+      if (next) break;
+    }
+    const el = document.getElementById('meet');
+    if (next && el) {
+      const fmt = next.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      el.textContent = 'next trimester — ' + fmt;
+    }
+  } catch (e) { /* leave the fallback "loading…" text rather than breaking later scripts */ }
+})();
+
+// ── SCROLL REVEAL (IntersectionObserver, respects reduced motion) ────────────
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const items = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(el => el.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, idx) => {
+      if (e.isIntersecting) {
+        e.target.style.transitionDelay = (Math.min(idx, 3) * 80) + 'ms';
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+  items.forEach(el => io.observe(el));
+  // Bottom fallback: elements near the document end can sit inside the negative
+  // rootMargin zone forever at max scroll — reveal whatever's left once
+  // scrolling bottoms out (checked once immediately for short documents).
+  const finishIfBottom = () => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      items.forEach(el => el.classList.add('in'));
+      window.removeEventListener('scroll', finishIfBottom);
+    }
+  };
+  window.addEventListener('scroll', finishIfBottom, { passive: true });
+  finishIfBottom();
+})();
+
+// ── WAVY WEIGHT CANVAS (filled ribbons, sunset-gradient fill per line) ───────
+(function () {
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const MAX_DPR = 2;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const LINE_COUNT   = 64;
+  const THIN_W       = 1.6;
+  const THICK_W      = 14;
+  const WAVE_AMP     = 6;
+  const WAVE_FREQ    = 0.0066;
+  const WAVE_SPEED   = 0.4;
+  const SEGMENTS     = 240;
+
+  // Sunset gradient stops (top → horizon). Each stop = [position 0..1, [r,g,b]].
+  const GRAD = [
+    [0.00, [0x2a, 0x10, 0x40]], // indigo
+    [0.28, [0x49, 0x18, 0x46]], // plum
+    [0.52, [0x8c, 0x2c, 0x36]], // wine
+    [0.72, [0xb2, 0x3a, 0x2a]], // rust
+    [0.88, [0xe6, 0x7a, 0x1a]], // ember
+    [1.00, [0xf6, 0xbf, 0x02]]  // amber horizon
+  ];
+
+  // small color-lerp helper: vertical position t in [0,1] → 'rgb(...)'
+  function gradColor(t) {
+    if (t <= 0) t = 0; else if (t >= 1) t = 1;
+    let a = GRAD[0], b = GRAD[GRAD.length - 1];
+    for (let i = 0; i < GRAD.length - 1; i++) {
+      if (t >= GRAD[i][0] && t <= GRAD[i + 1][0]) { a = GRAD[i]; b = GRAD[i + 1]; break; }
+    }
+    const span = (b[0] - a[0]) || 1;
+    const f = (t - a[0]) / span;
+    const r = Math.round(a[1][0] + (b[1][0] - a[1][0]) * f);
+    const g = Math.round(a[1][1] + (b[1][1] - a[1][1]) * f);
+    const bl = Math.round(a[1][2] + (b[1][2] - a[1][2]) * f);
+    return 'rgb(' + r + ',' + g + ',' + bl + ')';
+  }
+
+  function shape(w) {
+    w = (w - 0.10) / 0.78;
+    if (w <= 0) return 0;
+    if (w >= 1) return 1;
+    return w * w * (3 - 2 * w);
+  }
+
+  let maskCanvas = null, maskCtx = null, maskData = null;
+  let precomputedWeights = null;
+  let lineColors = null;
+
+  function buildMask() {
+    const panel = canvas.parentElement;
+    const pw = panel.clientWidth  || 640;
+    const ph = panel.clientHeight || 480;
+
+    if (!maskCanvas) {
+      maskCanvas = document.createElement('canvas');
+      maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    maskCanvas.width = pw;
+    maskCanvas.height = ph;
+    maskCtx.clearRect(0, 0, pw, ph);
+
+    let fontSize = Math.round(ph * 0.46);
+    maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    const maxW = pw * 0.82;
+    const measured = maskCtx.measureText('crac').width;
+    if (measured > maxW) {
+      fontSize = Math.floor(fontSize * maxW / measured);
+      maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    }
+    maskCtx.textAlign = 'center';
+    maskCtx.textBaseline = 'middle';
+    maskCtx.fillStyle = '#000000';
+    maskCtx.fillText('crac', pw / 2, ph / 2);
+
+    maskData = maskCtx.getImageData(0, 0, pw, ph).data;
+
+    const total = LINE_COUNT * (SEGMENTS + 1);
+    precomputedWeights = new Float32Array(total);
+    lineColors = new Array(LINE_COUNT);
+    const blurRows = Math.max(1, Math.round(ph / LINE_COUNT * 0.34));
+
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const yCenter = (i + 0.5) / LINE_COUNT * ph;
+      // per-line fill color sampled along the sunset gradient by vertical position
+      lineColors[i] = gradColor((i + 0.5) / LINE_COUNT);
+      const yMin = Math.max(0, Math.round(yCenter - blurRows));
+      const yMax = Math.min(ph - 1, Math.round(yCenter + blurRows));
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = Math.min(pw - 1, Math.max(0, Math.round(s / SEGMENTS * pw)));
+        let sum = 0, count = 0;
+        for (let ry = yMin; ry <= yMax; ry++) { sum += maskData[(ry * pw + x) * 4 + 3]; count++; }
+        precomputedWeights[i * (SEGMENTS + 1) + s] = sum / count / 255;
+      }
+    }
+  }
+
+  // ── Heat-shimmer pointer state ────────────────────────────────────────────
+  // The cursor is a pocket of warm air: nearby ribbons lift gently (heat rises)
+  // and pick up a small extra wavelet that shimmers around the pointer.
+  const HEAT_RADIUS   = 180;        // px of influence
+  const HEAT_RADIUS_SQ = HEAT_RADIUS * HEAT_RADIUS;
+  const HEAT_LIFT     = 20;         // max upward displacement (px)
+  const HEAT_RIPPLE   = 6;          // max extra sine amplitude at the cursor (px)
+  const HEAT_RIPPLE_FREQ = 0.045;   // spatial frequency of the local wavelet
+  const HEAT_RIPPLE_SPEED = 4.2;    // how fast the wavelet phase advances
+  const POINTER_LERP  = 0.09;       // per-frame smoothing toward the raw pointer
+  let pointerX = 0, pointerY = 0;       // smoothed pointer (canvas-local px)
+  let pointerTX = 0, pointerTY = 0;     // target (raw) pointer (canvas-local px)
+  let heatStrength = 0;                 // smoothed 0..1 envelope
+  let heatTarget = 0;                   // 1 while pointer is over the hero, else 0
+  let pointerInside = false;            // whether the smoothed pointer is usable
+  let canvasRect = null;                // cached bounding rect (set in resize)
+  let lastClientX = 0, lastClientY = 0; // last raw pointer client coords
+  let hasClientPos = false;             // whether we've ever seen the pointer
+
+  let currentDpr = 1;
+  function resize() {
+    const panel = canvas.parentElement;
+    const w = panel.clientWidth, h = panel.clientHeight;
+    if (w <= 0 || h <= 0) return;   // guard against 0×0 panel (e.g. display:none)
+    currentDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    canvas.width = Math.round(w * currentDpr);
+    canvas.height = Math.round(h * currentDpr);
+    ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
+    canvasRect = canvas.getBoundingClientRect();   // cache for pointer→canvas coords
+    buildMask();   // rebuilds mask, per-line weights AND per-line colors
+    if (reduceMotion) drawStatic();   // refresh the single static frame after layout change
+  }
+
+  let startTime = null, rafId = null;
+  const topX = new Float32Array(SEGMENTS + 1);
+  const topY = new Float32Array(SEGMENTS + 1);
+  const botY = new Float32Array(SEGMENTS + 1);
+
+  function draw(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = (ts - startTime) * 0.001;
+    const panel = canvas.parentElement;
+    const pw = panel.clientWidth, ph = panel.clientHeight;
+
+    ctx.clearRect(0, 0, pw, ph);   // transparent — the CSS sunset gradient shows through
+
+    if (!precomputedWeights) { rafId = requestAnimationFrame(draw); return; }
+
+    // Smooth the heat envelope + pointer toward their targets (no interaction
+    // under reduced motion — heatStrength stays pinned at 0 there).
+    heatStrength += (heatTarget - heatStrength) * POINTER_LERP;
+    if (pointerInside) {
+      pointerX += (pointerTX - pointerX) * POINTER_LERP;
+      pointerY += (pointerTY - pointerY) * POINTER_LERP;
+    }
+    const heatOn = heatStrength > 0.001 && pointerInside;
+    const ripplePhase = elapsed * HEAT_RIPPLE_SPEED;
+
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const phase  = i * 0.31 + elapsed * WAVE_SPEED;
+      const phase2 = i * 0.17 + elapsed * WAVE_SPEED * 0.7 + 1.1;
+      const yBase  = (i + 0.5) / LINE_COUNT * ph;
+      const base   = i * (SEGMENTS + 1);
+
+      // Cheap per-line skip: if this line's baseline is far above/below the
+      // pointer's vertical band, it can't be within HEAT_RADIUS — skip the math.
+      const dyLine = yBase - pointerY;
+      const lineHeated = heatOn && (dyLine * dyLine) < HEAT_RADIUS_SQ;
+
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = (s / SEGMENTS) * pw;
+        let y = yBase
+                + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+        if (lineHeated) {
+          const dx = x - pointerX;
+          const distSq = dx * dx + dyLine * dyLine;
+          if (distSq < HEAT_RADIUS_SQ) {
+            // Smooth radial falloff (1 at cursor → 0 at radius), eased.
+            let f = 1 - distSq / HEAT_RADIUS_SQ;
+            f = f * f;                       // soften the edge
+            const env = f * heatStrength;
+            y -= env * HEAT_LIFT;            // heat rises: bias upward
+            y += Math.sin(dx * HEAT_RIPPLE_FREQ + ripplePhase) * HEAT_RIPPLE * env;
+          }
+        }
+        const half = (THIN_W + (THICK_W - THIN_W) * shape(precomputedWeights[base + s])) * 0.5;
+        topX[s] = x; topY[s] = y - half; botY[s] = y + half;
+      }
+
+      ctx.fillStyle = lineColors[i];   // per-line color from the gradient
+      ctx.beginPath();
+      ctx.moveTo(topX[0], topY[0]);
+      for (let s = 1; s <= SEGMENTS; s++) ctx.lineTo(topX[s], topY[s]);
+      for (let s = SEGMENTS; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    rafId = requestAnimationFrame(draw);
+  }
+
+  // Animation runs only while the page is visible AND the hero canvas is on screen.
+  let pageVisible = !document.hidden;
+  let onScreen = true;   // until the IntersectionObserver reports otherwise
+
+  function startLoop() {
+    if (reduceMotion) { drawStatic(); return; }   // no rAF loop when motion is reduced
+    if (rafId || !pageVisible || !onScreen) return;
+    startTime = null;   // reset so motion resumes smoothly instead of jumping
+    rafId = requestAnimationFrame(draw);
+  }
+
+  // Render a single, motionless frame (used for prefers-reduced-motion).
+  function drawStatic() {
+    if (!precomputedWeights) return;
+    startTime = 0;
+    draw(0);
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+  function stopLoop() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+  function syncLoop() {
+    if (pageVisible && onScreen) startLoop(); else stopLoop();
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    pageVisible = !document.hidden;
+    syncLoop();
+  });
+
+  // Pause the rAF loop when the hero scrolls out of view, resume when it returns.
+  if ('IntersectionObserver' in window) {
+    const visObserver = new IntersectionObserver((entries) => {
+      onScreen = entries[0].isIntersecting;
+      syncLoop();
+    }, { threshold: 0 });
+    visObserver.observe(canvas);
+  }
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 150);
+  });
+
+  // ── Heat-shimmer pointer wiring (skipped entirely under reduced motion) ─────
+  if (!reduceMotion) {
+    // Shared re-evaluation: map the last raw client coords through the cached
+    // rect and decide whether the pointer is over the hero. Used by both
+    // pointermove and the scroll listener so a stationary cursor still cools
+    // down as the hero scrolls away (the cached rect is refreshed on scroll).
+    function evaluatePointer() {
+      if (!hasClientPos) return;
+      const rect = canvasRect || canvas.getBoundingClientRect();
+      const x = lastClientX - rect.left;
+      const y = lastClientY - rect.top;
+      // Only engage when the pointer is actually over the hero canvas.
+      if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+        pointerTX = x; pointerTY = y;
+        if (!pointerInside) { pointerX = x; pointerY = y; }  // no warp-in from stale pos
+        pointerInside = true;
+        heatTarget = 1;
+      } else {
+        heatTarget = 0;   // pointer left the hero: ease the shimmer out
+      }
+    }
+
+    window.addEventListener('pointermove', (e) => {
+      lastClientX = e.clientX; lastClientY = e.clientY;
+      hasClientPos = true;
+      evaluatePointer();
+    }, { passive: true });
+
+    // Scrolling with a stationary cursor fires no pointermove, so the cached
+    // rect goes stale and the shimmer stays engaged on a hero that has moved.
+    // Refresh the rect and re-evaluate from the saved client coords, throttled
+    // to one pass per frame.
+    let scrollRaf = 0;
+    window.addEventListener('scroll', () => {
+      if (scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0;
+        canvasRect = canvas.getBoundingClientRect();   // refresh stale rect
+        evaluatePointer();
+      });
+    }, { passive: true });
+
+    const cool = () => { heatTarget = 0; };
+    canvas.addEventListener('pointerleave', cool);
+    window.addEventListener('blur', cool);
+    document.addEventListener('pointercancel', cool);
+  }
+
+  document.fonts.ready.then(() => { resize(); startLoop(); });
+})();
+</script>
+</body>
+</html>

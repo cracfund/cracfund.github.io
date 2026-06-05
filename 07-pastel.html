@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>document.documentElement.className += ' js';</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRAC — crac.fund</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --base:    #f6eee8;   /* pale blush paper */
+    --paper:   #fbf6f1;   /* lighter sheet for cards / sliding panel */
+    --ink:     #3a3633;   /* dusty ink — waves + body text */
+    --ink-soft:#6c645d;   /* muted secondary text */
+    --coral:   #c56b52;   /* muted coral accent — large display text (AA large) */
+    --sage:    #6f8a6e;   /* sage accent — large display text (AA large) */
+    --coral-text: #a9543c;/* darker coral for small labels (AA normal) */
+    --sage-text:  #56714f;/* darker sage for small labels (AA normal) */
+    --butter-2:#ecd9a4;   /* soft butter */
+    --line:    rgba(58,54,51,0.14);
+    --font: 'Space Grotesk', sans-serif;
+  }
+
+  html { background: var(--base); scroll-behavior: smooth; }
+  body {
+    background: var(--base);
+    color: var(--ink);
+    font-family: var(--font);
+    font-weight: 300;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── MINIMAL FIXED NAV ───────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 40px;
+    /* soft base-colored scrim so the wordmark never collides with content scrolling beneath it */
+    background: linear-gradient(to bottom, var(--base) 30%, rgba(246,238,232,0) 100%);
+    mix-blend-mode: normal;
+  }
+  .nav-left { display: flex; align-items: center; gap: 12px; }
+  .nav-logo svg { display: block; width: 26px; height: 26px; }
+  .nav-wordmark { font-size: 13px; font-weight: 500; letter-spacing: 0.34em; text-transform: lowercase; color: var(--ink); }
+  .nav-right {
+    font-size: 12px; font-weight: 400; letter-spacing: 0.14em; text-transform: lowercase;
+    color: var(--ink); text-decoration: none; opacity: 0.75;
+    transition: opacity .3s ease, color .3s ease;
+  }
+  .nav-right:hover { opacity: 1; color: var(--coral); }
+
+  /* ── HERO (sticky, pinned full viewport) ─────────────────────────────── */
+  .hero {
+    position: sticky; top: 0;
+    height: 100vh; height: 100svh;
+    width: 100%;
+    overflow: hidden;
+    background: var(--base);
+    z-index: 1;
+    pointer-events: none;        /* decorative; never intercept clicks meant for content */
+  }
+  .canvas-stage { position: absolute; inset: 0; }
+  #waveCanvas { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+
+  /* hero foreground hints — pinned subtle eyebrow + scroll cue */
+  .hero-eyebrow {
+    position: absolute; left: 40px; bottom: 92px; z-index: 3;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.26em; text-transform: uppercase;
+    color: var(--coral-text); display: flex; align-items: center; gap: 12px;
+  }
+  .hero-eyebrow::before { content: ''; display: block; width: 30px; height: 1.5px; background: var(--coral-text); }
+
+  .scroll-cue {
+    position: absolute; left: 50%; bottom: 32px; transform: translateX(-50%); z-index: 3;
+    font-size: 10px; font-weight: 400; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-soft); display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .scroll-cue .line { width: 1px; height: 34px; background: linear-gradient(var(--ink-soft), transparent); animation: cue 2.4s ease-in-out infinite; transform-origin: top; }
+  @keyframes cue { 0%,100% { opacity: .3; transform: scaleY(.6); } 50% { opacity: .9; transform: scaleY(1); } }
+
+  /* ── CONTENT (slides up OVER the pinned hero) ────────────────────────── */
+  .content { position: relative; z-index: 2; }
+
+  /* first panel = the "sheet of paper" that slides over the record */
+  .sheet {
+    background: var(--paper);
+    border-top-left-radius: 30px;
+    border-top-right-radius: 30px;
+    margin-top: -56px;             /* tuck under so it overlaps the hero edge */
+    box-shadow: 0 -28px 60px rgba(58,54,51,0.10);
+    position: relative;
+  }
+  .sheet::before {
+    content: ''; position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    width: 52px; height: 4px; border-radius: 4px; background: var(--line);
+  }
+
+  section.band { padding: 120px 40px; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+
+  /* tagline / intro */
+  .intro .kicker {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--sage-text); margin-bottom: 30px;
+  }
+  .intro h2 {
+    font-size: clamp(30px, 5vw, 58px); font-weight: 300; line-height: 1.12; letter-spacing: -0.02em;
+    color: var(--ink); max-width: 18ch;
+  }
+  .intro h2 em { font-style: normal; color: var(--coral); }
+
+  /* lede */
+  .lede { border-top: 1px solid var(--line); }
+  .lede-text {
+    font-size: clamp(20px, 2.6vw, 30px); font-weight: 300; line-height: 1.5;
+    color: var(--ink); max-width: 26ch;
+  }
+  .lede-text strong { font-weight: 500; color: var(--coral); }
+  .lede-text strong.sage { color: var(--sage); }
+
+  /* stats — rounded cards */
+  .stats { background: var(--base); }
+  .stats .wrap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .stat-card {
+    background: var(--paper);
+    border-radius: 24px;
+    padding: 44px 36px 38px;
+    box-shadow: 0 12px 32px rgba(58,54,51,0.06);
+    display: flex; flex-direction: column; gap: 18px; min-height: 230px;
+    justify-content: space-between;
+  }
+  .stat-number { font-size: clamp(46px, 6vw, 72px); font-weight: 500; letter-spacing: -0.03em; line-height: 0.9; }
+  .stat-card:nth-child(1) .stat-number { color: var(--coral); }
+  .stat-card:nth-child(2) .stat-number { color: var(--sage); }
+  .stat-card:nth-child(3) .stat-number { color: var(--ink); }
+  .stat-label { font-size: 13px; font-weight: 400; letter-spacing: 0.04em; line-height: 1.55; color: var(--ink-soft); }
+
+  /* next trimester — this band is a transparent window onto the sticky waves,
+     so the text sits on a rounded paper card (same language as the stat cards)
+     to stay readable over the busiest part of the mask */
+  .listen .wrap {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 22px;
+    background: var(--paper);
+    border-radius: 24px;
+    padding: 48px 44px;
+    box-shadow: 0 12px 32px rgba(58,54,51,0.10);
+    max-width: 640px;
+  }
+  @media (max-width: 720px) {
+    .listen .wrap { padding: 36px 28px; }
+  }
+  .listen .kicker {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase; color: var(--sage-text);
+  }
+  .next-listening {
+    font-size: clamp(22px, 3.4vw, 40px); font-weight: 300; letter-spacing: -0.01em; color: var(--ink);
+    line-height: 1.2;
+  }
+  .next-listening b { font-weight: 500; color: var(--coral); }
+  .listen .note { font-size: 13px; font-weight: 300; color: var(--ink-soft); line-height: 1.7; max-width: 46ch; }
+
+  /* ── FOOTER ──────────────────────────────────────────────────────────── */
+  footer { background: var(--ink); color: var(--base); padding: 72px 40px 56px; position: relative; z-index: 2; }
+  footer .wrap { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 32px; }
+  .footer-mark { display: flex; align-items: center; gap: 12px; }
+  .footer-mark svg circle { stroke: var(--base); }
+  .footer-mark .dot { fill: var(--base); stroke: none; }
+  .footer-mark span { font-size: 13px; letter-spacing: 0.32em; text-transform: lowercase; font-weight: 500; }
+  .footer-left { font-size: 12px; font-weight: 300; letter-spacing: 0.05em; line-height: 1.9; opacity: 0.85; }
+  .footer-left sup { font-size: 9px; opacity: 0.8; }
+  .footer-left a { color: var(--butter-2); text-decoration: none; border-bottom: 1px solid rgba(236,217,164,0.4); overflow-wrap: break-word; }
+  .footer-footnote { font-size: 11px; font-weight: 300; opacity: 0.55; max-width: 44ch; line-height: 1.8; letter-spacing: 0.02em; }
+  .footer-footnote sup { font-size: 8px; }
+
+  /* ── SCROLL REVEAL ───────────────────────────────────────────────────── */
+  .js .reveal { opacity: 0; transform: translateY(28px); transition: opacity .9s cubic-bezier(.22,.61,.36,1), transform .9s cubic-bezier(.22,.61,.36,1); }
+  .js .reveal.in { opacity: 1; transform: none; }
+  .reveal.d1 { transition-delay: .08s; }
+  .reveal.d2 { transition-delay: .16s; }
+  .reveal.d3 { transition-delay: .24s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .js .reveal { opacity: 1; transform: none; transition: none; }
+    .scroll-cue .line { animation: none; }
+  }
+
+  /* ── MOBILE ──────────────────────────────────────────────────────────── */
+  @media (max-width: 820px) {
+    nav { padding: 18px 22px; }
+    .hero-eyebrow { left: 22px; bottom: 80px; }
+    section.band { padding: 84px 22px; }
+    .sheet { border-top-left-radius: 24px; border-top-right-radius: 24px; margin-top: -44px; }
+    .stats .wrap { grid-template-columns: 1fr; gap: 18px; }
+    .stat-card { min-height: 0; padding: 34px 28px; }
+    footer { padding: 56px 22px 44px; }
+    footer .wrap { flex-direction: column; gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo" aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="14.5" stroke="#3a3633" stroke-width="1.6"/>
+        <circle cx="16" cy="16" r="9.5" stroke="#3a3633" stroke-width="1.2"/>
+        <circle cx="16" cy="16" r="5" stroke="#3a3633" stroke-width="1.2"/>
+        <circle cx="16" cy="16" r="1.4" fill="#3a3633"/>
+      </svg>
+    </div>
+    <span class="nav-wordmark">crac</span>
+  </div>
+  <a class="nav-right" href="mailto:hello@crac.fund">crac.fund</a>
+</nav>
+
+<!-- HERO — full viewport pinned canvas -->
+<header class="hero">
+  <div class="canvas-stage">
+    <canvas id="waveCanvas"></canvas>
+  </div>
+  <p class="hero-eyebrow">January · May · September</p>
+  <div class="scroll-cue" aria-hidden="true">
+    <span>scroll</span>
+    <span class="line"></span>
+  </div>
+</header>
+
+<!-- CONTENT — slides up over the record -->
+<main class="content">
+
+  <!-- the sheet of paper sliding over the waves -->
+  <div class="sheet">
+    <section class="band intro">
+      <div class="wrap">
+        <p class="kicker reveal">crac</p>
+        <h2 class="reveal d1">We meet three times a year.</h2>
+      </div>
+    </section>
+
+    <section class="band lede">
+      <div class="wrap">
+        <p class="lede-text reveal">
+          crac is a small group. Each trimester we put some money into something we like.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <!-- stats -->
+  <section class="band stats">
+    <div class="wrap">
+      <div class="stat-card reveal">
+        <span class="stat-number">33⅓</span>
+        <span class="stat-label">revolutions / minute</span>
+      </div>
+      <div class="stat-card reveal d1">
+        <span class="stat-number">3</span>
+        <span class="stat-label">trimesters / year</span>
+      </div>
+      <div class="stat-card reveal d2">
+        <span class="stat-number">1</span>
+        <span class="stat-label">decision</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- next trimester -->
+  <section class="band listen">
+    <div class="wrap">
+      <p class="kicker reveal">The calendar</p>
+      <p class="next-listening reveal d1" id="meet">next trimester — <b>January, May &amp; September</b></p>
+      <p class="note reveal d2">One decision per meeting.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="footer-mark">
+        <svg viewBox="0 0 32 32" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="14.5" stroke-width="1.6"/>
+          <circle cx="16" cy="16" r="9.5" stroke-width="1.2"/>
+          <circle cx="16" cy="16" r="5" stroke-width="1.2"/>
+          <circle class="dot" cx="16" cy="16" r="1.4"/>
+        </svg>
+        <span>crac</span>
+      </div>
+    </div>
+    <p class="footer-left">
+      © crac — crac.fund<br>
+      <a href="mailto:hello@crac.fund">hello@crac.fund</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+// ── TRIMESTER DATE ───────────────────────────────────────────────────────────
+(function(){
+  const now = new Date(), starts = [0, 4, 8], yr = now.getFullYear();
+  let next = null;
+  for (const y of [yr, yr + 1]) {
+    for (const m of starts) {
+      const d = new Date(y, m, 1);
+      if (d > now) { next = d; break; }
+    }
+    if (next) break;
+  }
+  if (!next) return;
+  const fmt = next.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const el = document.getElementById('meet');
+  if (el) el.innerHTML = 'next trimester — <b>' + fmt + '</b>';
+})();
+
+// ── SCROLL REVEAL (IntersectionObserver, respects reduced motion) ────────────
+(function(){
+  const items = document.querySelectorAll('.reveal');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(el => el.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+  items.forEach(el => io.observe(el));
+  // Bottom fallback: elements near the document end can sit inside the negative
+  // rootMargin zone forever at max scroll — reveal whatever's left once
+  // scrolling bottoms out (checked once immediately for short documents).
+  const finishIfBottom = () => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      items.forEach(el => el.classList.add('in'));
+      window.removeEventListener('scroll', finishIfBottom);
+    }
+  };
+  window.addEventListener('scroll', finishIfBottom, { passive: true });
+  finishIfBottom();
+})();
+
+// ── WAVY WEIGHT CANVAS (filled ribbons spelling "crac") ──────────────────────
+(function () {
+  const canvas = document.getElementById('waveCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const MAX_DPR = 2;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const LINE_COUNT   = 64;
+  const THIN_W       = 1.2;
+  const THICK_W      = 13.5;
+  const WAVE_AMP     = 7;
+  const WAVE_FREQ    = 0.0058;
+  const WAVE_SPEED   = 0.34;
+  const SEGMENTS     = 260;
+
+  const INKC = '#3a3633';
+
+  function shape(w) {
+    w = (w - 0.10) / 0.78;
+    if (w <= 0) return 0;
+    if (w >= 1) return 1;
+    return w * w * (3 - 2 * w);
+  }
+
+  let maskCanvas = null, maskCtx = null, maskData = null;
+  let precomputedWeights = null;
+
+  function buildMask() {
+    const panel = canvas.parentElement;
+    const pw = panel.clientWidth  || 640;
+    const ph = panel.clientHeight || 480;
+
+    if (!maskCanvas) {
+      maskCanvas = document.createElement('canvas');
+      maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    maskCanvas.width = pw;
+    maskCanvas.height = ph;
+    maskCtx.clearRect(0, 0, pw, ph);
+
+    // size the word to the viewport; cap height so tall screens stay elegant
+    let fontSize = Math.round(Math.min(ph * 0.46, pw * 0.30));
+    maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    const maxW = pw * 0.86;
+    const measured = maskCtx.measureText('crac').width;
+    if (measured > maxW) {
+      fontSize = Math.floor(fontSize * maxW / measured);
+      maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    }
+    maskCtx.textAlign = 'center';
+    maskCtx.textBaseline = 'middle';
+    maskCtx.fillStyle = '#000000';
+    maskCtx.fillText('crac', pw / 2, ph / 2);
+
+    maskData = maskCtx.getImageData(0, 0, pw, ph).data;
+
+    const total = LINE_COUNT * (SEGMENTS + 1);
+    precomputedWeights = new Float32Array(total);
+    const blurRows = Math.max(1, Math.round(ph / LINE_COUNT * 0.34));
+
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const yCenter = (i + 0.5) / LINE_COUNT * ph;
+      const yMin = Math.max(0, Math.round(yCenter - blurRows));
+      const yMax = Math.min(ph - 1, Math.round(yCenter + blurRows));
+      for (let s = 0; s <= SEGMENTS; s++) {
+        const x = Math.min(pw - 1, Math.max(0, Math.round(s / SEGMENTS * pw)));
+        let sum = 0, count = 0;
+        for (let ry = yMin; ry <= yMax; ry++) { sum += maskData[(ry * pw + x) * 4 + 3]; count++; }
+        precomputedWeights[i * (SEGMENTS + 1) + s] = sum / count / 255;
+      }
+    }
+  }
+
+  const hero = canvas.closest('.hero');
+  const sheet = document.querySelector('.sheet');
+  let coverThreshold = Infinity;   // scrollY past which the hero is fully hidden by the sheet
+
+  function computeCoverThreshold() {
+    // hero is sticky top:0; the sheet (z-index above) tucks up by its negative margin.
+    // hero is fully covered once the sheet's top edge reaches the top of the viewport.
+    const heroH = hero ? hero.offsetHeight : window.innerHeight;
+    let overlap = 56;
+    if (sheet) {
+      const mt = parseFloat(getComputedStyle(sheet).marginTop);
+      if (!isNaN(mt)) overlap = -mt;        // negative margin -> positive overlap
+    }
+    coverThreshold = Math.max(0, heroH - overlap);
+  }
+
+  // ── "breath" pointer interaction ───────────────────────────────────────────
+  // The softest of the eight: ribbons drift gently TOWARD the cursor and the
+  // wave locally slows, as if the surface leans in to listen. Pointer is heavily
+  // smoothed (dreamlike lag) and decays slowly on leave.
+  const ATTRACT_MAX   = 12;     // px of pull at the cursor centre
+  const ATTRACT_RAD   = 200;    // px gaussian radius of influence
+  const SLOW_K        = 0.9;    // local time-freeze factor at the cursor
+  const POINTER_LERP  = 0.05;   // per-frame smoothing toward the raw pointer
+  const STRENGTH_DECAY= 0.012;  // per-frame ease-out (~2s to settle on leave)
+  const STRENGTH_RISE = 0.06;   // per-frame ease-in while engaged
+  const INV2RAD2 = 1 / (2 * ATTRACT_RAD * ATTRACT_RAD);
+
+  let rectLeft = 0, rectTop = 0;          // cached canvas rect (set in resize)
+  let pointerRawX = 0, pointerRawY = 0;   // latest raw pointer (canvas-local)
+  let pointerClientX = 0, pointerClientY = 0; // latest raw pointer (client coords)
+  let pointerX = 0, pointerY = 0;         // smoothed pointer
+  let pointerInside = false;              // pointer over the canvas + hero visible
+  let strength = 0;                       // 0..1 overall interaction strength
+  let pointerSeeded = false;              // avoid a lerp jump from (0,0)
+
+  // The hero has pointer-events:none, so elementFromPoint returns whatever is
+  // actually under the cursor (the content sheet, footer, body, or nav). The
+  // breath should only engage when the EXPOSED hero area is under the pointer —
+  // i.e. the hit element is NOT inside the content sheet or footer that slides
+  // over the canvas on scroll. This catches both scroll-under-stationary-cursor
+  // and mousing onto the sheet while the hero stays partly visible.
+  function overExposedHero(clientX, clientY) {
+    const el = document.elementFromPoint(clientX, clientY);
+    if (!el) return false;
+    return !el.closest('.content, .sheet, footer');
+  }
+
+  let currentDpr = 1;
+  function resize() {
+    const panel = canvas.parentElement;
+    currentDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    const w = panel.clientWidth, h = panel.clientHeight;
+    if (w <= 0 || h <= 0) { computeCoverThreshold(); return; }   // guard 0x0 panel
+    canvas.width = w * currentDpr;
+    canvas.height = h * currentDpr;
+    ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
+    // cache canvas rect for pointer→canvas-local mapping. The hero is sticky at
+    // top:0, so while visible its rect sits at (0,0); using the cached rect keeps
+    // the mapping correct regardless.
+    const r = canvas.getBoundingClientRect();
+    rectLeft = r.left; rectTop = r.top;
+    buildMask();
+    computeCoverThreshold();
+  }
+
+  if (!reduceMotion) {
+    window.addEventListener('pointermove', (e) => {
+      pointerClientX = e.clientX;
+      pointerClientY = e.clientY;
+      pointerRawX = e.clientX - rectLeft;
+      pointerRawY = e.clientY - rectTop;
+      if (!pointerSeeded) { pointerX = pointerRawX; pointerY = pointerRawY; pointerSeeded = true; }
+      // disengage if the cursor is actually over the content sheet / footer that
+      // slides over the canvas — only the exposed hero area should track.
+      pointerInside = overExposedHero(e.clientX, e.clientY);
+    }, { passive: true });
+    window.addEventListener('pointerleave', () => { pointerInside = false; });
+    window.addEventListener('blur', () => { pointerInside = false; });
+  }
+
+  let startTime = null, rafId = null;
+  const topX = new Float32Array(SEGMENTS + 1);
+  const topY = new Float32Array(SEGMENTS + 1);
+  const botY = new Float32Array(SEGMENTS + 1);
+
+  function draw(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = (ts - startTime) * 0.001;
+    const panel = canvas.parentElement;
+    const pw = panel.clientWidth, ph = panel.clientHeight;
+
+    ctx.clearRect(0, 0, pw, ph);
+
+    if (!precomputedWeights) { rafId = requestAnimationFrame(draw); return; }
+
+    // ── breath: advance smoothed pointer + overall strength ───────────────────
+    // Only engage while the hero is actually visible (not covered) and the
+    // pointer is genuinely inside the canvas bounds.
+    const engaged = pointerInside && !covered && pointerSeeded
+                  && pointerRawX >= 0 && pointerRawX <= pw
+                  && pointerRawY >= 0 && pointerRawY <= ph;
+    pointerX += (pointerRawX - pointerX) * POINTER_LERP;
+    pointerY += (pointerRawY - pointerY) * POINTER_LERP;
+    strength += ((engaged ? 1 : 0) - strength) * (engaged ? STRENGTH_RISE : STRENGTH_DECAY);
+    if (strength < 0.0005) strength = 0;
+    const active = strength > 0;
+    const px = pointerX, py = pointerY;
+
+    ctx.fillStyle = INKC;
+    for (let i = 0; i < LINE_COUNT; i++) {
+      const yBase  = (i + 0.5) / LINE_COUNT * ph;
+      const base   = i * (SEGMENTS + 1);
+      const dy     = active ? (py - yBase) : 0;       // row's vertical distance to cursor
+
+      for (let s = 0; s <= SEGMENTS; s++) {
+        let x = (s / SEGMENTS) * pw;
+
+        // gaussian influence of the cursor on this segment (0..1), scaled by strength.
+        // Uses the undisplaced grid point so the falloff is stable frame to frame.
+        let influence = 0;
+        if (active) {
+          const dx = px - x;
+          influence = Math.exp(-(dx * dx + dy * dy) * INV2RAD2) * strength;
+        }
+
+        // locally slow the wave: blend the time contribution toward a frozen value
+        const eElapsed = elapsed - elapsed * (influence * SLOW_K);
+        const phase  = i * 0.31 + eElapsed * WAVE_SPEED;
+        const phase2 = i * 0.17 + eElapsed * WAVE_SPEED * 0.7 + 1.1;
+
+        let y = yBase
+              + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+              + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+
+        // gentle attraction: drift this point toward the cursor, capped so the
+        // peak displacement stays ~ATTRACT_MAX px (gaussian falloff via influence)
+        if (influence > 0) {
+          const vx = px - x, vy = py - y;
+          const dist = Math.sqrt(vx * vx + vy * vy);
+          if (dist > 0.0001) {
+            const move = Math.min(ATTRACT_MAX, dist) * influence;
+            x += (vx / dist) * move;
+            y += (vy / dist) * move;
+          }
+        }
+
+        const half = (THIN_W + (THICK_W - THIN_W) * shape(precomputedWeights[base + s])) * 0.5;
+        topX[s] = x; topY[s] = y - half; botY[s] = y + half;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(topX[0], topY[0]);
+      for (let s = 1; s <= SEGMENTS; s++) ctx.lineTo(topX[s], topY[s]);
+      for (let s = SEGMENTS; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (reduceMotion) { rafId = null; return; }   // one static frame, no loop
+    rafId = requestAnimationFrame(draw);
+  }
+
+  // ── rAF gating ────────────────────────────────────────────────────────────
+  // The hero is position:sticky, so it stays "in view" behind the content even
+  // when fully covered. Pause when the document tab is hidden OR when the sheet
+  // has scrolled up far enough to fully cover the hero.
+  let covered = false;
+
+  function play() {
+    if (reduceMotion || rafId || document.hidden || covered) return;
+    startTime = null;                       // reset so resumed animation doesn't jump
+    rafId = requestAnimationFrame(draw);
+  }
+  function pause() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pause(); else play();
+  });
+
+  // Passive, throttled scroll check — no per-scroll layout reads (threshold cached).
+  let scrollScheduled = false;
+  function onScroll() {
+    if (scrollScheduled) return;
+    scrollScheduled = true;
+    requestAnimationFrame(() => {
+      scrollScheduled = false;
+      const nowCovered = window.scrollY >= coverThreshold;
+      if (nowCovered !== covered) {
+        covered = nowCovered;
+        if (covered) pause(); else play();
+      }
+      // Re-evaluate engagement against the (possibly shifted) layout. Scrolling
+      // with a stationary cursor can slide the sheet under the pointer without
+      // any pointermove firing, leaving a stale mapping. Refresh the cached rect
+      // and the pointer mapping, then check what's genuinely under the cursor.
+      // Skipped under reduced motion (no interaction loop runs there).
+      if (reduceMotion) return;
+      const r = canvas.getBoundingClientRect();
+      rectLeft = r.left; rectTop = r.top;
+      if (pointerSeeded) {
+        pointerRawX = pointerClientX - rectLeft;
+        pointerRawY = pointerClientY - rectTop;
+        pointerInside = overExposedHero(pointerClientX, pointerClientY);
+      }
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      resize();
+      // recompute covered state against the new threshold
+      const nowCovered = window.scrollY >= coverThreshold;
+      covered = nowCovered;
+      if (covered) pause(); else play();
+    }, 150);
+  });
+
+  function start() {
+    resize();
+    covered = window.scrollY >= coverThreshold;   // honor an initial scrolled position
+    if (reduceMotion) {
+      rafId = requestAnimationFrame(draw);        // render a single static frame
+    } else if (!covered) {
+      play();
+    }
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(start);
+  } else {
+    start();
+  }
+})();
+</script>
+</body>
+</html>

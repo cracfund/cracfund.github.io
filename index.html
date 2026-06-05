@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRAC — variations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #efe7d6;
+    --black: #111010;
+    --red: #e0301e;
+  }
+  body {
+    background: var(--cream);
+    color: var(--black);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+  header {
+    padding: 28px 36px;
+    border-bottom: 3px solid var(--black);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+  header span { font-size: 12px; opacity: 0.6; letter-spacing: 0.05em; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+  .card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 28px 32px 32px;
+    border-bottom: 1.5px solid var(--black);
+    border-right: 1.5px solid var(--black);
+    transition: background 0.12s ease;
+  }
+  .card:hover { background: rgba(17,16,16,0.05); }
+  .card-num { font-size: 11px; font-weight: 500; letter-spacing: 0.2em; color: var(--red); margin-bottom: 12px; }
+  .card-name { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+  .card-desc { font-size: 13px; line-height: 1.55; opacity: 0.75; margin-bottom: 18px; min-height: 3.2em; }
+  .swatches { display: flex; gap: 0; height: 14px; border: 1.5px solid var(--black); width: fit-content; }
+  .swatches i { display: block; width: 28px; height: 100%; }
+  footer { padding: 24px 36px; font-size: 11px; opacity: 0.5; letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CRAC — eight variations</h1>
+  <span>full-viewport wave hero · content on scroll · click a card to open</span>
+</header>
+
+<div class="grid">
+  <a class="card" href="01-midnight.html">
+    <div class="card-num">01</div>
+    <div class="card-name">midnight</div>
+    <p class="card-desc">Inverted: cream waves on near-black ink. Gallery-at-night, red accents only.</p>
+    <div class="swatches"><i style="background:#0d0c0b"></i><i style="background:#efe7d6"></i><i style="background:#e0301e"></i></div>
+  </a>
+  <a class="card" href="02-risograph.html">
+    <div class="card-num">02</div>
+    <div class="card-name">risograph</div>
+    <p class="card-desc">Two misregistered wave systems, riso red over riso blue, multiply where they overlap.</p>
+    <div class="swatches"><i style="background:#efe7d6"></i><i style="background:#e0301e"></i><i style="background:#1d36b8"></i></div>
+  </a>
+  <a class="card" href="03-swiss.html">
+    <div class="card-num">03</div>
+    <div class="card-name">swiss</div>
+    <p class="card-desc">White, 12-column grid, hairlines, sticky poster headers, one red accent per spread.</p>
+    <div class="swatches"><i style="background:#ffffff"></i><i style="background:#111010"></i><i style="background:#e0301e"></i></div>
+  </a>
+  <a class="card" href="04-sunset.html">
+    <div class="card-num">04</div>
+    <div class="card-name">sunset</div>
+    <p class="card-desc">Wave bands color-lerped through indigo, rust, and amber, like a striped evening sky.</p>
+    <div class="swatches"><i style="background:#2a1040"></i><i style="background:#b23a2a"></i><i style="background:#f6bf02"></i></div>
+  </a>
+  <a class="card" href="05-phosphor.html">
+    <div class="card-num">05</div>
+    <div class="card-name">phosphor</div>
+    <p class="card-desc">CRT terminal: glowing green ribbons, scanlines, blinking cursor on the listening date.</p>
+    <div class="swatches"><i style="background:#060807"></i><i style="background:#33ff66"></i><i style="background:#0e3a1c"></i></div>
+  </a>
+  <a class="card" href="06-bauhaus.html">
+    <div class="card-num">06</div>
+    <div class="card-name">bauhaus</div>
+    <p class="card-desc">Cream hero, then full-bleed red, blue, and yellow blocks with circle and triangle motifs.</p>
+    <div class="swatches"><i style="background:#e0301e"></i><i style="background:#1d36b8"></i><i style="background:#f6bf02"></i></div>
+  </a>
+  <a class="card" href="07-pastel.html">
+    <div class="card-num">07</div>
+    <div class="card-name">pastel</div>
+    <p class="card-desc">Blush and sage, sticky hero with a paper sheet sliding up over the waves on scroll.</p>
+    <div class="swatches"><i style="background:#f6eee8"></i><i style="background:#e08a72"></i><i style="background:#9bb29a"></i></div>
+  </a>
+  <a class="card" href="09-blueprint.html">
+    <div class="card-num">09</div>
+    <div class="card-name">blueprint</div>
+    <p class="card-desc">Cyanotype: pale ribbons glowing out of prussian blue over a drafting grid, spec-table stats.</p>
+    <div class="swatches"><i style="background:#0f2d52"></i><i style="background:#143a6b"></i><i style="background:#dceefb"></i></div>
+  </a>
+</div>
+
+<footer>variations on wave-weight-flow-paper.html — same canvas, eight moods</footer>
+
+</body>
+</html>
