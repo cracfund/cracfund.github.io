@@ -3,116 +3,2242 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRAC — variations</title>
+<title>CRAC — crac.fund</title>
+<link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230d0c0b'/%3E%3Ccircle cx='16' cy='16' r='12' stroke='%23efe7d6' stroke-width='2' fill='none'/%3E%3Ccircle cx='16' cy='16' r='7' stroke='%23efe7d6' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23efe7d6'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── THEME SURFACE ────────────────────────────────────────────────────────────
+     Every color the page uses routes through these custom properties. :root holds
+     the midnight defaults so the page renders correctly before (or without) JS.
+     Themes override them via the engine (inline on <html>), and the engine
+     registers each color var via CSS.registerProperty so var changes INTERPOLATE
+     during a theme switch — the whole world crossfades, canvas included (the
+     renderers read their colors back out of getComputedStyle every frame). */
   :root {
-    --cream: #efe7d6;
-    --black: #111010;
-    --red: #e0301e;
+    --bg:      #0d0c0b;   /* page background */
+    --fg:      #efe7d6;   /* primary text */
+    --accent:  #e0301e;   /* the one loud color */
+    --ribbon:  #efe7d6;   /* hero ribbon ink */
+    --wash:    #0d0c0b;   /* canvas per-frame wash */
+    --nav-fg:  #efe7d6;   /* nav text/logo color */
+    --line:    rgba(239,231,214,0.14);  /* hairline borders */
+    --soft:    rgba(239,231,214,0.55);  /* secondary/dim text */
+    --nav-blend: normal;   /* nav blend over the hero. NOTE: blend modes can't
+                              interpolate — mixing 'difference' and 'normal'
+                              across themes makes the nav flash-invert at the
+                              swap, so every theme stays 'normal'. */
+    --grain-opacity: 0.05;
+    --grain-blend: screen;
+    --font: 'Space Grotesk', sans-serif;
+    --font-label: 'Space Grotesk', sans-serif;  /* themes may swap to mono */
   }
+
+  html { background: var(--bg); }
   body {
-    background: var(--cream);
-    color: var(--black);
-    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
     font-weight: 300;
     min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    overflow-wrap: break-word;
   }
-  header {
-    padding: 28px 36px;
-    border-bottom: 3px solid var(--black);
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
+
+  ::selection { background: var(--fg); color: var(--bg); }
+
+  /* ── THEME-SWITCH CROSSFADE AIDS ─────────────────────────────────────────────
+     Registered color vars interpolate on their own. Everything theme css sets
+     DIRECTLY (solid section backgrounds, borders, shadows) gets a matching
+     transition while html.theming is up, so the below-fold restyle fades instead
+     of snapping. Background-IMAGES (grain, scanlines, drafting grids, gradients)
+     can't interpolate at all — so the texture/atmosphere/gradient slots dip to
+     transparent across the swap and fade back in on the other side. */
+  html.theming *,
+  html.theming *::before,
+  html.theming *::after {
+    transition:
+      background-color 1.25s ease, color 1.25s ease, border-color 1.25s ease,
+      border-width 1.25s ease, padding 1.25s ease, letter-spacing 1.25s ease,
+      text-shadow 1.25s ease, box-shadow 1.25s ease, opacity 0.7s ease !important;
   }
-  h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-  header span { font-size: 12px; opacity: 0.6; letter-spacing: 0.05em; }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  /* Exception: the dial must keep its sweep mid-switch (the universal rule
+     above would otherwise drop its transform transition and make it snap). */
+  html.theming .nav-logo .dial {
+    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s ease !important;
   }
-  .card {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-    padding: 28px 32px 32px;
-    border-bottom: 1.5px solid var(--black);
-    border-right: 1.5px solid var(--black);
-    transition: background 0.12s ease;
+  body::before, body::after, main::before { transition: opacity 0.7s ease; }
+  html.theming body::before,
+  html.theming body::after,
+  html.theming main::before { opacity: 0 !important; }
+
+  /* Gradient slot: themes that need a big below-fold gradient put it here
+     (background-image won't crossfade, so it rides the dip instead). Sits over
+     main's own solid var(--bg) — which DOES interpolate — and under content. */
+  main::before {
+    content: '';
+    position: absolute; inset: 0; z-index: -1; pointer-events: none;
   }
-  .card:hover { background: rgba(17,16,16,0.05); }
-  .card-num { font-size: 11px; font-weight: 500; letter-spacing: 0.2em; color: var(--red); margin-bottom: 12px; }
-  .card-name { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
-  .card-desc { font-size: 13px; line-height: 1.55; opacity: 0.75; margin-bottom: 18px; min-height: 3.2em; }
-  .swatches { display: flex; gap: 0; height: 14px; border: 1.5px solid var(--black); width: fit-content; }
-  .swatches i { display: block; width: 28px; height: 100%; }
-  footer { padding: 24px 36px; font-size: 11px; opacity: 0.5; letter-spacing: 0.04em; }
+
+  /* ── TEXTURE SLOTS ────────────────────────────────────────────────────────────
+     body::before is the texture slot (grain by default), body::after the
+     atmosphere slot (vignette by default). Themes may override either entirely
+     in their scoped CSS (e.g. phosphor scanlines, blueprint drafting grid). */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--grain-blend);
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 50% -8%, rgba(239,231,214,0.07), rgba(239,231,214,0) 55%),
+      radial-gradient(130% 130% at 50% 120%, rgba(0,0,0,0.55), rgba(0,0,0,0) 60%);
+  }
+
+  /* NAV — minimal, fixed, overlaid on the hero. The left cluster is the record
+     changer: clicking logo + wordmark drops the next variation. */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 36px;
+    mix-blend-mode: var(--nav-blend);
+  }
+  .nav-left {
+    display: flex; align-items: center; gap: 13px;
+    cursor: pointer; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    background: none; border: none; font: inherit; padding: 0;
+  }
+  .nav-left:focus-visible { outline: 1.5px solid var(--nav-fg); outline-offset: 6px; }
+  .nav-logo { color: var(--nav-fg); }
+  /* viewBox is padded so the orbiting dial dot has room outside the rings;
+     33px keeps the record itself the same visual size as before. */
+  .nav-logo svg { display: block; width: 33px; height: 33px; }
+  /* The changer is the page's one fixed point: same face, same metrics, in
+     every theme. Themes may recolor it (var(--nav-fg)) or glow it, but never
+     retypeset it — the !importants enforce that against scoped theme css. */
+  .nav-wordmark {
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 14px !important; font-weight: 700 !important;
+    letter-spacing: 0.14em !important; text-transform: uppercase !important;
+    color: var(--nav-fg);
+  }
+  .nav-logo .dial {
+    transform-box: view-box; transform-origin: 50% 50%;
+    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-logo .dial { transition: none; }
+  }
+  .nav-right {
+    font-size: 12px; font-weight: 400; letter-spacing: 0.08em; color: var(--nav-fg);
+    text-decoration: none; border-bottom: 1.5px solid var(--nav-fg); padding-bottom: 2px;
+    transition: color 0.18s ease, border-color 0.18s ease;
+  }
+  .nav-right:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ENTRANCE CHOREOGRAPHY — nav and scroll cue trail the canvas ink-in (load only;
+     theme switches keep the chrome in place). Gated behind .js: no-JS visitors
+     see everything immediately. */
+  .js nav { opacity: 0; transition: opacity 1.1s ease; }
+  .js nav.in { opacity: 1; }
+
+  /* HERO — the canvas IS the hero, full viewport, edge to edge */
+  .hero {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+    background: var(--wash);
+  }
+  #waveCanvas { display: block; width: 100%; height: 100%; position: absolute; inset: 0; }
+
+  .scroll-cue {
+    position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+    z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--fg); opacity: 0.55; mix-blend-mode: var(--nav-blend);
+    animation: bob 2.6s ease-in-out infinite;
+  }
+  .scroll-cue .bar { width: 1.5px; height: 30px; background: var(--fg); opacity: 0.6; }
+  @keyframes bob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 6px); } }
+  .js .scroll-cue { opacity: 0; transition: opacity 1.1s ease; }
+  .js .scroll-cue.in { opacity: 0.55; }
+  .js .scroll-cue.gone { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+
+  /* CONTENT SECTIONS BELOW THE HERO */
+  main { position: relative; z-index: 1; background: var(--bg); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 40px; }
+
+  .block { padding: clamp(72px, 11vw, 150px) 0; border-top: 1px solid var(--line); }
+  .block:first-child { border-top: none; }
+
+  /* INTRO — eyebrow carries the next meeting date; lede follows */
+  .intro-block .eyebrow {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 30px; display: flex; align-items: center; gap: 12px;
+    font-family: var(--font-label);
+  }
+  .intro-block .eyebrow::before { content: ''; width: 28px; height: 2px; background: var(--accent); flex-shrink: 0; }
+  .intro-block .eyebrow .date { color: var(--fg); }
+  .intro-block .eyebrow sup { font-size: 0.62em; font-weight: 600; text-transform: lowercase; letter-spacing: 0; }
+  .lede {
+    font-size: clamp(19px, 2.4vw, 26px); font-weight: 300; line-height: 1.62;
+    max-width: 30ch; color: var(--fg);
+  }
+  .lede strong { font-weight: 600; }
+
+  /* STATS */
+  .stats { display: grid; gap: 0; }
+  .stat-item {
+    padding: 34px 0; border-bottom: 1px solid var(--line);
+    display: grid; grid-template-columns: minmax(120px, 0.4fr) 1fr; gap: 28px; align-items: baseline;
+  }
+  .stat-item:first-child { border-top: 1px solid var(--line); }
+  .stat-number { font-size: clamp(44px, 7vw, 72px); font-weight: 700; letter-spacing: -0.03em; line-height: 0.9; color: var(--fg); }
+  .stat-label { font-size: clamp(13px, 1.5vw, 15px); font-weight: 300; letter-spacing: 0.04em; line-height: 1.5; color: var(--fg); opacity: 0.78; font-family: var(--font-label); }
+  .stat-item:nth-child(1) .stat-number,
+  .stat-item:nth-child(3) .stat-number { color: var(--accent); }
+
+  /* FOOTER */
+  footer { padding: 56px 0 72px; border-top: 1px solid var(--line); }
+  footer .wrap { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 32px; }
+  .footer-left { font-size: 13px; font-weight: 300; letter-spacing: 0.05em; color: var(--fg); opacity: 0.8; line-height: 1.8; font-family: var(--font-label); }
+  .footer-left a { color: inherit; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; transition: color 0.18s ease; }
+  .footer-left a:hover { color: var(--accent); }
+
+  /* SCROLL REVEAL — same system as 01b-midnight-elevated. */
+  .js .reveal {
+    --d: 0s;
+    opacity: 0; transform: translateY(28px);
+    transition: opacity 0.9s ease var(--d), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1) var(--d);
+  }
+  .js .reveal.d1 { --d: 0.09s; }
+  .js .reveal.d2 { --d: 0.18s; }
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  /* Stat numbers ink in — blur-to-sharp, trailing their row slightly. */
+  .js .reveal .stat-number {
+    opacity: 0; filter: blur(6px);
+    transition: opacity 0.9s ease calc(var(--d) + 0.12s), filter 1.1s ease calc(var(--d) + 0.12s);
+  }
+  .js .reveal.in .stat-number { opacity: 1; filter: blur(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal { opacity: 1; transform: none; transition: none; }
+    .js .reveal .stat-number { opacity: 1; filter: none; transition: none; }
+    .js nav { opacity: 1; transition: none; }
+    .js .scroll-cue { opacity: 0.55; transition: none; }
+    .scroll-cue { animation: none; }
+    html.theming { transition: none !important; }
+    html.theming *,
+    html.theming *::before,
+    html.theming *::after { transition: none !important; }
+  }
+
+  /* MOBILE */
+  @media (max-width: 760px) {
+    nav { padding: 16px 20px; }
+    .wrap { padding: 0 22px; }
+    .stat-item { grid-template-columns: 1fr; gap: 10px; }
+    footer .wrap { flex-direction: column; }
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>CRAC — eight variations</h1>
-  <span>full-viewport wave hero · content on scroll · click a card to open</span>
+<!-- NAV — the left cluster is the record changer -->
+<nav>
+  <button class="nav-left" id="changer" aria-label="Play the next variation" title="next side">
+    <span class="nav-logo" aria-hidden="true">
+      <!-- viewBox starts at 0,0 ON PURPOSE: with an offset viewBox (-3 -3 …),
+           the dial's percentage transform-origin resolves against the box size
+           but ignores the offsets, so the rotation center drifts off the record
+           and the bead orbits wrong. Zero-based box + centered art = the 50%
+           origin IS the record center under every browser's interpretation. -->
+      <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="19" cy="19" r="14.5" stroke="currentColor" stroke-width="2"/>
+        <circle cx="19" cy="19" r="10" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="19" cy="19" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="19" cy="19" r="1.5" fill="currentColor"/>
+        <!-- the dial: a bead riding ON the outer ring (same radius), always
+             visually connected. Its angle marks the current variation. -->
+        <g class="dial" id="logoDial">
+          <circle cx="19" cy="4.5" r="2.2" fill="currentColor"/>
+        </g>
+      </svg>
+    </span>
+    <span class="nav-wordmark">CRAC</span>
+  </button>
+  <a class="nav-right" href="mailto:hello@crac.fund">crac.fund</a>
+</nav>
+
+<!-- HERO — full viewport canvas -->
+<header class="hero">
+  <canvas id="waveCanvas"></canvas>
+  <div class="scroll-cue" aria-hidden="true">
+    <span>scroll</span>
+    <span class="bar"></span>
+  </div>
 </header>
 
-<div class="grid">
-  <a class="card" href="01-midnight.html">
-    <div class="card-num">01</div>
-    <div class="card-name">midnight</div>
-    <p class="card-desc">Inverted: cream waves on near-black ink. Gallery-at-night, red accents only.</p>
-    <div class="swatches"><i style="background:#0d0c0b"></i><i style="background:#efe7d6"></i><i style="background:#e0301e"></i></div>
-  </a>
-  <a class="card" href="02-risograph.html">
-    <div class="card-num">02</div>
-    <div class="card-name">risograph</div>
-    <p class="card-desc">Two misregistered wave systems, riso red over riso blue, multiply where they overlap.</p>
-    <div class="swatches"><i style="background:#efe7d6"></i><i style="background:#e0301e"></i><i style="background:#1d36b8"></i></div>
-  </a>
-  <a class="card" href="03-swiss.html">
-    <div class="card-num">03</div>
-    <div class="card-name">swiss</div>
-    <p class="card-desc">White, 12-column grid, hairlines, sticky poster headers, one red accent per spread.</p>
-    <div class="swatches"><i style="background:#ffffff"></i><i style="background:#111010"></i><i style="background:#e0301e"></i></div>
-  </a>
-  <a class="card" href="04-sunset.html">
-    <div class="card-num">04</div>
-    <div class="card-name">sunset</div>
-    <p class="card-desc">Wave bands color-lerped through indigo, rust, and amber, like a striped evening sky.</p>
-    <div class="swatches"><i style="background:#2a1040"></i><i style="background:#b23a2a"></i><i style="background:#f6bf02"></i></div>
-  </a>
-  <a class="card" href="05-phosphor.html">
-    <div class="card-num">05</div>
-    <div class="card-name">phosphor</div>
-    <p class="card-desc">CRT terminal: glowing green ribbons, scanlines, blinking cursor on the listening date.</p>
-    <div class="swatches"><i style="background:#060807"></i><i style="background:#33ff66"></i><i style="background:#0e3a1c"></i></div>
-  </a>
-  <a class="card" href="06-bauhaus.html">
-    <div class="card-num">06</div>
-    <div class="card-name">bauhaus</div>
-    <p class="card-desc">Cream hero, then full-bleed red, blue, and yellow blocks with circle and triangle motifs.</p>
-    <div class="swatches"><i style="background:#e0301e"></i><i style="background:#1d36b8"></i><i style="background:#f6bf02"></i></div>
-  </a>
-  <a class="card" href="07-pastel.html">
-    <div class="card-num">07</div>
-    <div class="card-name">pastel</div>
-    <p class="card-desc">Blush and sage, sticky hero with a paper sheet sliding up over the waves on scroll.</p>
-    <div class="swatches"><i style="background:#f6eee8"></i><i style="background:#e08a72"></i><i style="background:#9bb29a"></i></div>
-  </a>
-  <a class="card" href="09-blueprint.html">
-    <div class="card-num">09</div>
-    <div class="card-name">blueprint</div>
-    <p class="card-desc">Cyanotype: pale ribbons glowing out of prussian blue over a drafting grid, spec-table stats.</p>
-    <div class="swatches"><i style="background:#0f2d52"></i><i style="background:#143a6b"></i><i style="background:#dceefb"></i></div>
-  </a>
-</div>
+<!-- CONTENT BELOW -->
+<main>
 
-<footer>variations on wave-weight-flow-paper.html — same canvas, eight moods</footer>
+  <!-- INTRO — next meeting and lede in one breath -->
+  <section class="block intro-block">
+    <div class="wrap">
+      <p class="eyebrow reveal" id="meet">
+        <span class="lbl">next trimester</span>
+        <span class="date">September 1<sup>st</sup> 2026</span>
+      </p>
+      <p class="lede reveal d1">
+        CRAC is a small group. Each trimester we put some money into something we like.
+      </p>
+    </div>
+  </section>
 
+  <!-- STATS -->
+  <section class="block">
+    <div class="wrap stats">
+      <div class="stat-item reveal">
+        <span class="stat-number">33⅓</span>
+        <span class="stat-label">revolutions / minute</span>
+      </div>
+      <div class="stat-item reveal d1">
+        <span class="stat-number">3</span>
+        <span class="stat-label">trimesters / year</span>
+      </div>
+      <div class="stat-item reveal d2">
+        <span class="stat-number">1</span>
+        <span class="stat-label">decision / trimester</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <p class="footer-left reveal">
+      © CRAC — crac.fund<br>
+      <a href="mailto:hello@crac.fund">hello@crac.fund</a>
+    </p>
+  </div>
+</footer>
+
+<!-- THEME MODULES — one per variation, each pushes into window.CRAC_THEMES.
+     Loaded before the engine. A missing file just means that theme doesn't
+     appear in the cycle (handy during development). Inlined for release. -->
+<script>window.CRAC_THEMES = [];</script>
+<script>
+// THEME: midnight — warm cream ribbons over near-black ink. Reference
+// implementation for the 00-changer theme contract; see CONTRACT.md.
+window.CRAC_THEMES = window.CRAC_THEMES || [];
+window.CRAC_THEMES.push({
+  id: 'midnight',
+  label: 'midnight',
+  order: 1,
+  dark: true,
+  vars: {
+    '--bg':      '#0d0c0b',
+    '--fg':      '#efe7d6',
+    '--accent':  '#e0301e',
+    '--ribbon':  '#efe7d6',
+    '--wash':    '#0d0c0b',
+    '--nav-fg':  '#efe7d6',
+    '--line':    'rgba(239,231,214,0.14)',
+    '--soft':    'rgba(239,231,214,0.55)',
+    '--nav-blend': 'normal',   // difference flash-inverts at theme swaps — see shell note
+    '--grain-opacity': '0.05',
+    '--grain-blend': 'screen',
+  },
+  // Midnight IS the structural default — no flavor rules needed. The empty
+  // string is deliberate (the shell concatenates css blocks).
+  css: '',
+  hero: (function () {
+    const THIN_W = 1.1, THICK_W = 14;
+    const WAVE_AMP = 8, WAVE_FREQ = 0.0054, WAVE_SPEED = 0.34;
+
+    // Signature pointer interaction: "ink pressure" — ribbons within the radius
+    // swell in WIDTH only, as if the nib laid down more ink under the hand.
+    const PRESS_RADIUS = 170;
+    const PRESS_RADIUS2 = PRESS_RADIUS * PRESS_RADIUS;
+    const PRESS_INV_R = 1 / PRESS_RADIUS;
+    const PRESS_MAX = 0.45;
+
+    // Scratch arrays, lazily sized to the segment count.
+    let topX = null, topY = null, botY = null;
+    function ensureScratch(n) {
+      if (!topX || topX.length !== n) {
+        topX = new Float32Array(n);
+        topY = new Float32Array(n);
+        botY = new Float32Array(n);
+      }
+    }
+
+    return {
+      lineCount: 72,
+      segments: 260,
+      maskScale: 0.42,
+
+      draw(env) {
+        const { ctx, w, h, weights, segs, lines, shape } = env;
+        ensureScratch(segs + 1);
+
+        ctx.fillStyle = env.cssVar('--wash');
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = env.cssVar('--ribbon');
+        const px = env.ptr.x, py = env.ptr.y;
+        const pressAmt = PRESS_MAX * env.ptr.strength;
+        const ptrActive = pressAmt > 0.001;
+
+        for (let i = 0; i < lines; i++) {
+          const phase  = i * 0.31 + env.waveT * WAVE_SPEED;
+          const phase2 = i * 0.17 + env.waveT * WAVE_SPEED * 0.7 + 1.1;
+          const yBase  = (i + 0.5) / lines * h;
+          const base   = i * (segs + 1);
+          const lineBreath = env.breath(i);
+
+          // Cheap per-line reject: skip pointer math when the baseline can't
+          // fall inside the influence band.
+          const lineHit = ptrActive && Math.abs(yBase - py) < PRESS_RADIUS;
+
+          for (let s = 0; s <= segs; s++) {
+            const x = (s / segs) * w;
+            const y = yBase
+                    + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                    + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+            let press = 1;
+            if (lineHit) {
+              const dx = x - px, dy = y - py;
+              const d2 = dx * dx + dy * dy;
+              if (d2 < PRESS_RADIUS2) {
+                const d = Math.sqrt(d2);
+                const t = 1 - d * PRESS_INV_R;
+                press += pressAmt * (t * t * (3 - 2 * t));
+              }
+            }
+            const wgt = shape(weights[base + s]) * env.entrance(s / segs) * lineBreath;
+            const half = (THIN_W + (THICK_W - THIN_W) * wgt) * 0.5 * press;
+            topX[s] = x; topY[s] = y - half; botY[s] = y + half;
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(topX[0], topY[0]);
+          for (let s = 1; s <= segs; s++) ctx.lineTo(topX[s], topY[s]);
+          for (let s = segs; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+          ctx.closePath();
+          ctx.fill();
+        }
+      },
+    };
+  })(),
+});
+</script>
+<script>
+// THEME: risograph — duotone riso print on cream paper. Two misregistered ink
+// passes (riso red over riso blue, the blue multiplied so overlaps darken),
+// with a cursor "loupe" that shears the two passes apart. See CONTRACT.md.
+window.CRAC_THEMES = window.CRAC_THEMES || [];
+window.CRAC_THEMES.push({
+  id: 'risograph',
+  label: 'risograph',
+  order: 2,
+  dark: false,
+  vars: {
+    '--bg':        '#f2ece0',  // cream paper
+    '--fg':        '#181410',  // dark brown ink
+    '--accent':    '#e0301e',  // riso red
+    '--ribbon':    '#e0301e',  // hero ink (wordmark exports red)
+    '--wash':      '#f2ece0',  // canvas per-frame wash = paper
+    '--nav-fg':    '#181410',  // dark nav ink for the light sheet
+    '--line':      'rgba(24,20,16,0.16)',
+    '--soft':      'rgba(24,20,16,0.55)',
+    '--nav-blend': 'normal',   // light theme: no difference blend
+    '--grain-opacity': '0.12', // paper grain, low + multiply for cream
+    '--grain-blend':   'multiply',
+    // theme specials — read every frame in draw()
+    '--riso-red':  '#e0301e',
+    '--riso-blue': '#1d36b8',
+    '--riso-yellow': '#f6bf02',
+  },
+
+  css: `
+    /* duotone tinted section backgrounds — multiply-style tints so the paper
+       grain shows through. Intro (lede) leans blue, stats leans red, echoing
+       the source variation's section duotone. */
+    html[data-theme="risograph"] .intro-block { background: rgba(29,54,184,0.05); }
+    html[data-theme="risograph"] main .block:nth-child(2) { background: rgba(224,48,30,0.06); }
+
+    /* eyebrow + lede accents in riso ink */
+    html[data-theme="risograph"] .intro-block .eyebrow { color: var(--riso-red); }
+    html[data-theme="risograph"] .intro-block .eyebrow::before { background: var(--riso-red); }
+    html[data-theme="risograph"] .lede strong { color: var(--riso-blue); }
+
+    /* color-coded stat numbers: red / blue / dark across the three rows.
+       Overrides the structural nth-child(1)/(3) = accent rule. */
+    html[data-theme="risograph"] .stat-item:nth-child(1) .stat-number { color: var(--riso-red); }
+    html[data-theme="risograph"] .stat-item:nth-child(2) .stat-number { color: var(--riso-blue); }
+    html[data-theme="risograph"] .stat-item:nth-child(3) .stat-number { color: var(--fg); }
+
+    /* a tasteful drop of yellow: warm underline on footer links */
+    html[data-theme="risograph"] .footer-left a:hover { color: var(--riso-yellow); }
+
+    /* PAPER GRAIN texture slot — fine fractal noise + soft fibers, multiplied
+       over cream at low opacity so it reads as a riso sheet, not a screen. */
+    html[data-theme="risograph"] body::before {
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6 0.02' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23f)'/%3E%3C/svg%3E");
+      background-size: 180px 180px, 320px 320px;
+    }
+    /* ATMOSPHERE — warm paper falloff at the corners, multiplied. */
+    html[data-theme="risograph"] body::after {
+      background:
+        radial-gradient(135% 95% at 50% -10%, rgba(255,253,247,0.5), rgba(255,253,247,0) 58%),
+        radial-gradient(110% 110% at 100% 100%, rgba(92,72,42,0.12), rgba(92,72,42,0) 55%),
+        radial-gradient(110% 110% at 0% 100%, rgba(92,72,42,0.09), rgba(92,72,42,0) 55%);
+      mix-blend-mode: multiply;
+    }
+  `,
+
+  hero: (function () {
+    const THIN_W = 1.6, THICK_W = 15;
+    const WAVE_AMP = 8, WAVE_FREQ = 0.0060, WAVE_SPEED = 0.42;
+
+    // Two ink passes: color + phase/amplitude/speed/freq offset so they
+    // misregister. dirX/dirY: unit direction the cursor loupe drags each pass —
+    // red up-left, blue down-right — so misregistration splits apart.
+    const PASSES = [
+      { varName: '--riso-red',  phaseOff: 0.0, ampScale: 1.0,  speedScale: 1.0, freqScale: 1.0,  dirX: -1, dirY: -1, comp: 'source-over' },
+      { varName: '--riso-blue', phaseOff: 1.7, ampScale: 0.85, speedScale: -0.9, freqScale: 1.12, dirX:  1, dirY:  1, comp: 'multiply' },
+    ];
+
+    // Signature pointer interaction: the misregistration "loupe". Near the
+    // cursor the red pass shears one way and the blue the opposite, up to
+    // POINTER_MAX_SEP px each, with a squared-distance falloff.
+    const POINTER_RADIUS  = 170;
+    const POINTER_R2      = POINTER_RADIUS * POINTER_RADIUS;
+    const POINTER_MAX_SEP = 14;
+
+    // Scratch arrays, lazily sized to the segment count.
+    let topX = null, topY = null, botY = null;
+    function ensureScratch(n) {
+      if (!topX || topX.length !== n) {
+        topX = new Float32Array(n);
+        topY = new Float32Array(n);
+        botY = new Float32Array(n);
+      }
+    }
+
+    function drawPass(env, pass, color, offX, offY, active) {
+      const { ctx, w, h, weights, segs, lines, shape } = env;
+      const px = env.ptr.x, py = env.ptr.y;
+      ctx.fillStyle = color;
+      ctx.globalCompositeOperation = pass.comp;
+
+      const amp  = WAVE_AMP * pass.ampScale;
+      const freq = WAVE_FREQ * pass.freqScale;
+
+      for (let i = 0; i < lines; i++) {
+        const phase  = i * 0.31 + env.waveT * WAVE_SPEED * pass.speedScale + pass.phaseOff;
+        const phase2 = i * 0.17 + env.waveT * WAVE_SPEED * 0.7 * pass.speedScale + 1.1 + pass.phaseOff;
+        const yBase  = (i + 0.5) / lines * h;
+        const base   = i * (segs + 1);
+        const lineBreath = env.breath(i);
+
+        // Cheap per-line reject: a stationary loupe can't reach this row.
+        const lineHit = active && Math.abs(yBase - py) < POINTER_RADIUS + Math.abs(offY);
+
+        for (let s = 0; s <= segs; s++) {
+          const x = (s / segs) * w;
+          const y = yBase
+                  + Math.sin(x * freq + phase) * amp
+                  + Math.sin(x * freq * 1.7 + phase2) * amp * 0.35;
+          let dx = 0, dy = 0;
+          if (lineHit) {
+            const ddx = x - px, ddy = y - py;
+            const d2 = ddx * ddx + ddy * ddy;
+            if (d2 < POINTER_R2) {
+              // smooth (1 - d2/r2)^2 falloff, peak at the cursor
+              const f = 1 - d2 / POINTER_R2;
+              const fall = f * f;
+              dx = offX * fall;
+              dy = offY * fall;
+            }
+          }
+          // entrance + breath multiply into the WORD weight only.
+          const wgt = shape(weights[base + s]) * env.entrance(s / segs) * lineBreath;
+          const half = (THIN_W + (THICK_W - THIN_W) * wgt) * 0.5;
+          topX[s] = x + dx; topY[s] = y + dy - half; botY[s] = y + dy + half;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(topX[0], topY[0]);
+        for (let s = 1; s <= segs; s++) ctx.lineTo(topX[s], topY[s]);
+        for (let s = segs; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    return {
+      lineCount: 42,
+      segments: 200,
+      maskScale: 0.46,
+
+      draw(env) {
+        const { ctx, w, h, segs } = env;
+        ensureScratch(segs + 1);
+
+        // Paper wash (cream) — fills the hero so the grain/paper reads beneath.
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = env.cssVar('--wash');
+        ctx.fillRect(0, 0, w, h);
+
+        // Loupe offsets for the current (smoothed) pointer strength.
+        const active = env.ptr.strength > 0.001;
+        const offMax = POINTER_MAX_SEP * env.ptr.strength;
+
+        // First pass normal, second multiplied so overlaps go dark (misregister).
+        const red  = env.cssVar('--riso-red');
+        const blue = env.cssVar('--riso-blue');
+        drawPass(env, PASSES[0], red,  PASSES[0].dirX * offMax, PASSES[0].dirY * offMax, active);
+        drawPass(env, PASSES[1], blue, PASSES[1].dirX * offMax, PASSES[1].dirY * offMax, active);
+
+        // Reset composite so the shell's chrome composites normally.
+        ctx.globalCompositeOperation = 'source-over';
+      },
+    };
+  })(),
+});
+</script>
+<script>
+// THEME: swiss — pure-white paper, black-ink ribbons, one red rule. Swiss
+// editorial rigor; ported from 03-swiss.html. See CONTRACT.md.
+window.CRAC_THEMES = window.CRAC_THEMES || [];
+window.CRAC_THEMES.push({
+  id: 'swiss',
+  label: 'swiss',
+  order: 3,
+  dark: false,
+  vars: {
+    '--bg':      '#ffffff',
+    '--fg':      '#0a0a0a',
+    '--accent':  '#e0301e',
+    '--ribbon':  '#0a0a0a',
+    '--wash':    '#ffffff',
+    '--nav-fg':  '#0a0a0a',
+    '--line':    'rgba(10,10,10,0.18)',
+    '--soft':    'rgba(10,10,10,0.55)',
+    '--swiss-red': '#e0301e',
+    // Light theme: nav must read as solid black ink, not blended.
+    '--nav-blend': 'normal',
+    // No grain — Swiss paper is clean.
+    '--grain-opacity': '0',
+    '--grain-blend': 'normal',
+  },
+  // Below-fold flavor: Swiss typographic discipline on the SHARED markup —
+  // crisper hairlines, generous tracking on labels, uppercase stat-labels,
+  // a single red rule detail. Every selector scoped to data-theme="swiss".
+  css: `
+    html[data-theme="swiss"] body::before { opacity: 0; }
+    html[data-theme="swiss"] body::after { opacity: 0; } /* opacity (not display) so it can fade through a switch */
+
+    html[data-theme="swiss"] .nav-right {
+      letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500;
+    }
+
+    html[data-theme="swiss"] .scroll-cue {
+      letter-spacing: 0.22em; text-transform: uppercase; font-weight: 500;
+    }
+
+    /* Crisper, darker hairline borders throughout. */
+    html[data-theme="swiss"] .block,
+    html[data-theme="swiss"] .intro-block,
+    html[data-theme="swiss"] .stat-item,
+    html[data-theme="swiss"] footer {
+      border-color: rgba(10,10,10,0.85);
+    }
+
+    html[data-theme="swiss"] .eyebrow,
+    html[data-theme="swiss"] .eyebrow .lbl {
+      text-transform: uppercase; letter-spacing: 0.24em; font-weight: 500;
+    }
+    html[data-theme="swiss"] .eyebrow .date {
+      letter-spacing: 0.12em; color: var(--accent); font-weight: 600;
+    }
+
+    html[data-theme="swiss"] .stat-label {
+      text-transform: uppercase; letter-spacing: 0.18em; font-weight: 500;
+    }
+    html[data-theme="swiss"] .stat-number {
+      letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+    }
+
+    html[data-theme="swiss"] .lede strong { font-weight: 600; }
+
+    /* The single red detail: a hairline rule accent on the footer-left. */
+    html[data-theme="swiss"] .footer-left {
+      border-top: 2px solid var(--accent); padding-top: 16px;
+    }
+  `,
+  hero: (function () {
+    const THIN_W = 1.2, THICK_W = 14;
+    const WAVE_AMP = 7, WAVE_FREQ = 0.0058, WAVE_SPEED = 0.36;
+
+    // Signature pointer interaction: "THE MAGNET" — the cursor is a point
+    // charge and the ribbon geometry is pushed directly AWAY from it in x and
+    // y. Unlike midnight's width swell, this displaces the centerline itself.
+    const MAG_RADIUS  = 130;
+    const MAG_RADIUS2 = MAG_RADIUS * MAG_RADIUS;
+    const MAG_INV_R   = 1 / MAG_RADIUS;
+    const MAG_MAX     = 22;   // max displacement (px) away from pointer
+
+    // Scratch arrays, lazily sized to the segment count.
+    let topX = null, topY = null, botY = null;
+    function ensureScratch(n) {
+      if (!topX || topX.length !== n) {
+        topX = new Float32Array(n);
+        topY = new Float32Array(n);
+        botY = new Float32Array(n);
+      }
+    }
+
+    return {
+      lineCount: 64,
+      segments: 260,
+      maskScale: 0.46,
+
+      draw(env) {
+        const { ctx, w, h, weights, segs, lines, shape } = env;
+        ensureScratch(segs + 1);
+
+        ctx.fillStyle = env.cssVar('--wash');
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = env.cssVar('--ribbon');
+        const px = env.ptr.x, py = env.ptr.y;
+        const magAmt = env.ptr.strength;
+        const magOn = magAmt > 0.001;
+
+        for (let i = 0; i < lines; i++) {
+          const phase  = i * 0.31 + env.waveT * WAVE_SPEED;
+          const phase2 = i * 0.17 + env.waveT * WAVE_SPEED * 0.7 + 1.1;
+          const yBase  = (i + 0.5) / lines * h;
+          const base   = i * (segs + 1);
+          const lineBreath = env.breath(i);
+
+          // Cheap per-line reject: the wavy centerline can wander ~WAVE_AMP*1.35
+          // off yBase, so widen the band a touch before the radius test.
+          const lineHit = magOn && Math.abs(yBase - py) < MAG_RADIUS + 12;
+
+          for (let s = 0; s <= segs; s++) {
+            const x = (s / segs) * w;
+            let y = yBase
+                  + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                  + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+
+            let dx = 0;
+            // Point-charge deflection: push directly away from pointer in x and
+            // y, smoothstep falloff, scaled by eased pointer strength.
+            if (lineHit) {
+              const ddx = x - px, ddy = y - py;
+              const d2 = ddx * ddx + ddy * ddy;
+              if (d2 < MAG_RADIUS2) {
+                const d = Math.sqrt(d2);
+                const t = 1 - d * MAG_INV_R;             // 0..1, 1 at pointer
+                const fall = t * t * (3 - 2 * t);         // smoothstep falloff
+                const push = MAG_MAX * fall * magAmt;
+                const inv = d > 0.0001 ? push / d : 0;    // normalize direction
+                dx = ddx * inv;
+                y += ddy * inv;
+              }
+            }
+
+            const wgt = shape(weights[base + s]) * env.entrance(s / segs) * lineBreath;
+            const half = (THIN_W + (THICK_W - THIN_W) * wgt) * 0.5;
+            topX[s] = x + dx; topY[s] = y - half; botY[s] = y + half;
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(topX[0], topY[0]);
+          for (let s = 1; s <= segs; s++) ctx.lineTo(topX[s], topY[s]);
+          for (let s = segs; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+          ctx.closePath();
+          ctx.fill();
+        }
+      },
+    };
+  })(),
+});
+</script>
+<script>
+// THEME: sunset — 64 ribbons fading indigo→rust→amber across the sky, warm
+// cream text on a deep dusk gradient below. Heat-shimmer pointer. See CONTRACT.md.
+window.CRAC_THEMES = window.CRAC_THEMES || [];
+window.CRAC_THEMES.push({
+  id: 'sunset',
+  label: 'sunset',
+  order: 4,
+  dark: true,
+  vars: {
+    '--bg':      '#2a1040',   // deep indigo dusk — representative single bg
+    '--fg':      '#f3d9b0',   // warm cream
+    '--accent':  '#f6bf02',   // amber horizon
+    '--ribbon':  '#f3d9b0',   // structural fallback; hero recolors per line
+    '--wash':    '#2a1040',   // sky behind the ribbons (top of the gradient)
+    '--nav-fg':  '#f3d9b0',
+    '--line':    'rgba(243,217,176,0.12)',
+    '--soft':    'rgba(243,217,176,0.62)',
+    // Sunset gradient stops — read every frame so the whole sky crossfades.
+    '--sun-0':   '#2a1040',   // indigo (top)
+    '--sun-1':   '#b23a2a',   // rust (middle)
+    '--sun-2':   '#f6bf02',   // amber (horizon)
+    '--nav-blend': 'normal',
+    '--grain-opacity': '0.04',
+    '--grain-blend': 'soft-light',
+  },
+  css: `
+    /* Below-fold dusk sky: gradients can't crossfade, so it lives in the
+       main::before gradient slot (which dips through the theme switch) over
+       main's interpolating solid var(--bg). */
+    html[data-theme="sunset"] main::before {
+      background:
+        linear-gradient(180deg,
+          #150a1f 0%,
+          #1e0d2c 32%,
+          #2a1040 62%,
+          #3c1542 100%);
+    }
+    html[data-theme="sunset"] .nav-wordmark,
+    html[data-theme="sunset"] .nav-right,
+    html[data-theme="sunset"] .nav-index {
+      text-shadow: 0 1px 6px rgba(0,0,0,0.55);
+    }
+    html[data-theme="sunset"] .eyebrow,
+    html[data-theme="sunset"] .eyebrow .lbl { color: var(--accent); }
+    html[data-theme="sunset"] .eyebrow::before { background: var(--accent); }
+    html[data-theme="sunset"] .stat-number { color: var(--accent); }
+    html[data-theme="sunset"] .lede strong { color: #fff; }
+    html[data-theme="sunset"] footer,
+    html[data-theme="sunset"] .footer-left { text-shadow: 0 1px 4px rgba(0,0,0,0.45); }
+
+    /* Atmosphere slot: warm horizon haze + corner vignette over the whole page. */
+    html[data-theme="sunset"] body::after {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(120% 60% at 50% 102%, rgba(246,191,2,0.18), rgba(246,191,2,0) 60%),
+        radial-gradient(135% 130% at 50% 50%, rgba(0,0,0,0) 60%, rgba(8,3,15,0.5) 100%);
+    }
+  `,
+  hero: (function () {
+    const THIN_W = 1.6, THICK_W = 14;
+    const WAVE_AMP = 6, WAVE_FREQ = 0.0066, WAVE_SPEED = 0.4;
+
+    // Signature pointer interaction: "heat shimmer" — the cursor is a pocket of
+    // warm air. Ribbons within HEAT_RADIUS rise (heat lifts) and pick up a fast
+    // local ripple wavelet that shimmers around the pointer.
+    const HEAT_RADIUS = 180;
+    const HEAT_RADIUS_SQ = HEAT_RADIUS * HEAT_RADIUS;
+    const HEAT_LIFT = 20;
+    const HEAT_RIPPLE = 6;
+    const HEAT_RIPPLE_FREQ = 0.045;
+    const HEAT_RIPPLE_SPEED = 4.2;
+
+    // Scratch arrays, lazily sized to the segment count.
+    let topX = null, topY = null, botY = null;
+    function ensureScratch(n) {
+      if (!topX || topX.length !== n) {
+        topX = new Float32Array(n);
+        topY = new Float32Array(n);
+        botY = new Float32Array(n);
+      }
+    }
+
+    // Parse '#rrggbb' / 'rgb(...)' into [r,g,b]. Cached by string per frame.
+    let cacheStr = ['', '', ''];
+    let cacheRGB = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    function toRGB(str, slot) {
+      if (str === cacheStr[slot]) return cacheRGB[slot];
+      let r = 0, g = 0, b = 0;
+      const s = str.trim();
+      if (s.charCodeAt(0) === 35) { // '#'
+        if (s.length >= 7) {
+          r = parseInt(s.slice(1, 3), 16);
+          g = parseInt(s.slice(3, 5), 16);
+          b = parseInt(s.slice(5, 7), 16);
+        } else if (s.length >= 4) {
+          r = parseInt(s[1] + s[1], 16);
+          g = parseInt(s[2] + s[2], 16);
+          b = parseInt(s[3] + s[3], 16);
+        }
+      } else {
+        const m = s.match(/[\d.]+/g);
+        if (m) { r = +m[0]; g = +m[1]; b = +m[2]; }
+      }
+      cacheStr[slot] = str;
+      const out = cacheRGB[slot];
+      out[0] = r; out[1] = g; out[2] = b;
+      return out;
+    }
+
+    return {
+      lineCount: 64,
+      segments: 240,
+      maskScale: 0.46,
+
+      draw(env) {
+        const { ctx, w, h, weights, segs, lines, shape } = env;
+        ensureScratch(segs + 1);
+
+        // Sky wash behind the ribbons (top of the gradient — indigo).
+        ctx.fillStyle = env.cssVar('--wash');
+        ctx.fillRect(0, 0, w, h);
+
+        // Read the three sunset stops this frame so a theme switch crossfades
+        // the whole sky. Interpolate piecewise in JS by line position.
+        const c0 = toRGB(env.cssVar('--sun-0'), 0);
+        const c1 = toRGB(env.cssVar('--sun-1'), 1);
+        const c2 = toRGB(env.cssVar('--sun-2'), 2);
+        function gradColor(t) {
+          if (t <= 0) t = 0; else if (t >= 1) t = 1;
+          let ar, ag, ab, br, bg, bb, f;
+          if (t < 0.5) {
+            ar = c0[0]; ag = c0[1]; ab = c0[2];
+            br = c1[0]; bg = c1[1]; bb = c1[2];
+            f = t / 0.5;
+          } else {
+            ar = c1[0]; ag = c1[1]; ab = c1[2];
+            br = c2[0]; bg = c2[1]; bb = c2[2];
+            f = (t - 0.5) / 0.5;
+          }
+          const r = (ar + (br - ar) * f) | 0;
+          const g = (ag + (bg - ag) * f) | 0;
+          const b = (ab + (bb - ab) * f) | 0;
+          return 'rgb(' + r + ',' + g + ',' + b + ')';
+        }
+
+        const px = env.ptr.x, py = env.ptr.y;
+        const heat = env.ptr.strength;
+        const heatOn = heat > 0.001;
+        const ripplePhase = env.animT * HEAT_RIPPLE_SPEED;
+
+        for (let i = 0; i < lines; i++) {
+          const phase  = i * 0.31 + env.waveT * WAVE_SPEED;
+          const phase2 = i * 0.17 + env.waveT * WAVE_SPEED * 0.7 + 1.1;
+          const yBase  = (i + 0.5) / lines * h;
+          const base   = i * (segs + 1);
+          const lineBreath = env.breath(i);
+
+          // Cheap per-line reject: skip pointer math when the baseline can't
+          // fall within the heat band.
+          const dyLine = yBase - py;
+          const lineHeated = heatOn && (dyLine * dyLine) < HEAT_RADIUS_SQ;
+
+          for (let s = 0; s <= segs; s++) {
+            const x = (s / segs) * w;
+            let y = yBase
+                  + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                  + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+            if (lineHeated) {
+              const dx = x - px;
+              const distSq = dx * dx + dyLine * dyLine;
+              if (distSq < HEAT_RADIUS_SQ) {
+                let f = 1 - distSq / HEAT_RADIUS_SQ;
+                f = f * f;                 // soften the edge
+                const e = f * heat;        // scaled by pointer strength
+                y -= e * HEAT_LIFT;        // heat rises: bias upward
+                y += Math.sin(dx * HEAT_RIPPLE_FREQ + ripplePhase) * HEAT_RIPPLE * e;
+              }
+            }
+            const wgt = shape(weights[base + s]) * env.entrance(s / segs) * lineBreath;
+            const half = (THIN_W + (THICK_W - THIN_W) * wgt) * 0.5;
+            topX[s] = x; topY[s] = y - half; botY[s] = y + half;
+          }
+
+          // Per-line fill sampled along the live sunset gradient by position.
+          ctx.fillStyle = gradColor((i + 0.5) / lines);
+          ctx.beginPath();
+          ctx.moveTo(topX[0], topY[0]);
+          for (let s = 1; s <= segs; s++) ctx.lineTo(topX[s], topY[s]);
+          for (let s = segs; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+          ctx.closePath();
+          ctx.fill();
+        }
+      },
+    };
+  })(),
+});
+</script>
+<script>
+// THEME: phosphor — CRT terminal. Phosphor-green ribbons glowing off a
+// near-black tube. Two-pass ribbons (a wider low-alpha glow under each crisp
+// ribbon) and a signature "beam" pointer interaction. See CONTRACT.md.
+window.CRAC_THEMES = window.CRAC_THEMES || [];
+window.CRAC_THEMES.push({
+  id: 'phosphor',
+  label: 'phosphor',
+  order: 5,
+  dark: true,
+  vars: {
+    '--bg':      '#060807',
+    '--fg':      '#cfe9d6',                    // pale phosphor ink
+    '--accent':  '#33ff66',                    // phosphor green
+    '--ribbon':  '#33ff66',                    // crisp ribbon = accent green
+    '--wash':    '#060807',
+    '--nav-fg':  '#33ff66',
+    '--line':    'rgba(51,255,102,0.18)',      // green hairlines
+    '--soft':    '#2bcc55',                     // dim green secondary
+    '--phos-glow': 'rgba(51,255,102,0.16)',    // low-alpha glow pass fill
+    '--nav-blend': 'normal',
+    '--grain-opacity': '0',                     // texture handled by scanlines
+    '--grain-blend': 'normal',
+    '--font-label': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+  },
+  // Below-fold terminal flavor, all scoped to html[data-theme="phosphor"].
+  css: `
+    /* Scanline texture in the body::before slot — fine CRT raster veil. */
+    html[data-theme="phosphor"] body::before {
+      background-image: repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) 2px,
+        rgba(0,0,0,0.22) 3px,
+        rgba(0,0,0,0.22) 4px
+      );
+      opacity: 0.5;
+      mix-blend-mode: multiply;
+    }
+    /* CRT vignette in body::after — green bloom up top, dark falloff below. */
+    html[data-theme="phosphor"] body::after {
+      background:
+        radial-gradient(120% 95% at 50% 42%, rgba(51,255,102,0.05), rgba(6,8,7,0) 55%),
+        radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,0.55), rgba(0,0,0,0) 60%);
+    }
+
+    /* Green glow text-shadows on headings/stats. */
+    html[data-theme="phosphor"] .nav-wordmark { text-shadow: 0 0 6px rgba(51,255,102,0.55); }
+    html[data-theme="phosphor"] .lede strong { color: var(--accent); text-shadow: 0 0 8px rgba(51,255,102,0.35); }
+    html[data-theme="phosphor"] .stat-number { text-shadow: 0 0 14px rgba(51,255,102,0.3); }
+    html[data-theme="phosphor"] .stat-item:nth-child(2) .stat-number {
+      color: var(--fg); text-shadow: 0 0 12px rgba(207,233,214,0.2);
+    }
+
+    /* Eyebrow becomes a terminal prompt: replace the red bar with a '>' glyph,
+       lowercase mono label. */
+    html[data-theme="phosphor"] .intro-block .eyebrow {
+      text-transform: lowercase; letter-spacing: 0.12em;
+      color: var(--accent); text-shadow: 0 0 6px rgba(51,255,102,0.4);
+    }
+    html[data-theme="phosphor"] .intro-block .eyebrow::before {
+      content: '>'; width: auto; height: auto; background: none;
+      color: var(--accent); font-weight: 600;
+      text-shadow: 0 0 6px rgba(51,255,102,0.5);
+    }
+    /* Blinking cursor riding the date, terminal-style. */
+    html[data-theme="phosphor"] .intro-block .eyebrow .date {
+      color: var(--fg); text-shadow: 0 0 7px rgba(51,255,102,0.25);
+    }
+    html[data-theme="phosphor"] .intro-block .eyebrow .date::after {
+      content: ''; display: inline-block;
+      width: 0.55em; height: 1em; margin-left: 0.35em;
+      transform: translateY(0.12em);
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(51,255,102,0.6);
+      animation: phosphorBlink 1.05s steps(1) infinite;
+    }
+    @keyframes phosphorBlink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+
+    /* Lowercase mono stat labels. */
+    html[data-theme="phosphor"] .stat-label {
+      text-transform: lowercase; letter-spacing: 0.05em; color: var(--soft); opacity: 1;
+    }
+
+    /* Footer + nav-right links pick up the green. */
+    html[data-theme="phosphor"] .nav-right:hover,
+    html[data-theme="phosphor"] .footer-left a:hover {
+      color: var(--accent); border-color: var(--accent); text-shadow: 0 0 6px rgba(51,255,102,0.5);
+    }
+
+    /* Honor reduced motion: no blink. */
+    @media (prefers-reduced-motion: reduce) {
+      html[data-theme="phosphor"] .intro-block .eyebrow .date::after { animation: none; }
+    }
+  `,
+  hero: (function () {
+    const THIN_W = 1.4, THICK_W = 13;
+    const WAVE_AMP = 6, WAVE_FREQ = 0.0066, WAVE_SPEED = 0.4;
+
+    // Cheap glow technique (no shadowBlur): a wider, low-alpha ribbon laid down
+    // under each crisp ribbon — GLOW_GROW px added per side.
+    const GLOW_GROW = 5;
+
+    // Signature pointer interaction: "THE BEAM" — the cursor is an electron beam
+    // exciting the phosphor. Within BEAM_R it widens the glow pass (up to
+    // +BEAM_GLOW_BOOST per side at center), and the nearest lines pick up a fast
+    // time-varying horizontal jitter. Scaled by env.ptr.strength.
+    const BEAM_R          = 150;
+    const BEAM_R2         = BEAM_R * BEAM_R;
+    const BEAM_GLOW_BOOST = GLOW_GROW * 0.6; // ~+3px glow width at center, per side
+    const BEAM_JITTER     = 2;               // ±px horizontal jitter at center
+    const BEAM_JITTER_R   = 64;              // line-center vertical reach for jitter
+    const BEAM_JITTER_R2  = BEAM_JITTER_R * BEAM_JITTER_R;
+    const JITTER_SPEED    = 9.0;             // rad/s shimmer for beam interference
+
+    // Scratch arrays, lazily sized to the segment count. The crisp pass and the
+    // wider glow pass share topX; each has its own top/bottom band.
+    let topX = null, topY = null, botY = null, gTopY = null, gBotY = null;
+    function ensureScratch(n) {
+      if (!topX || topX.length !== n) {
+        topX = new Float32Array(n);
+        topY = new Float32Array(n);
+        botY = new Float32Array(n);
+        gTopY = new Float32Array(n);
+        gBotY = new Float32Array(n);
+      }
+    }
+
+    function ribbon(ctx, x, top, bot, segs) {
+      ctx.beginPath();
+      ctx.moveTo(x[0], top[0]);
+      for (let s = 1; s <= segs; s++) ctx.lineTo(x[s], top[s]);
+      for (let s = segs; s >= 0; s--) ctx.lineTo(x[s], bot[s]);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    return {
+      lineCount: 56,
+      segments: 240,
+      maskScale: 0.48,
+
+      draw(env) {
+        const { ctx, w, h, weights, segs, lines, shape } = env;
+        ensureScratch(segs + 1);
+
+        ctx.fillStyle = env.cssVar('--wash');
+        ctx.fillRect(0, 0, w, h);
+
+        const phosGlow = env.cssVar('--phos-glow');
+        const phos = env.cssVar('--ribbon');
+
+        // Beam is only live when engaged and not in reduced motion. ptr.strength
+        // is already forced to 0 during transitions and reduced motion.
+        const bStr = env.ptr.strength;
+        const beamOn = bStr > 0.001;
+        const bx = env.ptr.x, by = env.ptr.y;
+        const jitterPhase = env.animT * JITTER_SPEED;
+
+        for (let i = 0; i < lines; i++) {
+          const phase  = i * 0.31 + env.waveT * WAVE_SPEED;
+          const phase2 = i * 0.17 + env.waveT * WAVE_SPEED * 0.7 + 1.1;
+          const yBase  = (i + 0.5) / lines * h;
+          const base   = i * (segs + 1);
+          const lineBreath = env.breath(i);
+
+          // Per-line horizontal jitter: only lines whose center sits near the
+          // beam vertically shimmer (the nearest 2-3). Computed once per line.
+          let jitterX = 0;
+          if (beamOn) {
+            const dyc = yBase - by;
+            if (dyc < BEAM_JITTER_R && dyc > -BEAM_JITTER_R) {
+              const fall = 1 - (dyc * dyc) / BEAM_JITTER_R2;
+              jitterX = Math.sin(jitterPhase + i * 1.7) * BEAM_JITTER * fall * bStr;
+            }
+          }
+
+          for (let s = 0; s <= segs; s++) {
+            const x = (s / segs) * w + jitterX;
+            const y = yBase
+                    + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                    + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+            // Word weight carries the entrance ink-in and settled breath; the
+            // thin baseline never does (hard rule 1).
+            const wgt = shape(weights[base + s]) * env.entrance(s / segs) * lineBreath;
+            const half = (THIN_W + (THICK_W - THIN_W) * wgt) * 0.5;
+
+            // Local glow widening near the cursor (smooth radial falloff).
+            let grow = GLOW_GROW;
+            if (beamOn) {
+              const dx = x - bx, dy = y - by;
+              const d2 = dx * dx + dy * dy;
+              if (d2 < BEAM_R2) {
+                const fall = 1 - d2 / BEAM_R2;
+                grow += BEAM_GLOW_BOOST * fall * fall * bStr;
+              }
+            }
+
+            topX[s] = x;
+            topY[s] = y - half;        botY[s] = y + half;
+            gTopY[s] = y - half - grow; gBotY[s] = y + half + grow;
+          }
+
+          // Cheap glow pass: wider, low-alpha ribbon under the crisp one.
+          ctx.fillStyle = phosGlow;
+          ribbon(ctx, topX, gTopY, gBotY, segs);
+
+          // Crisp phosphor ribbon.
+          ctx.fillStyle = phos;
+          ribbon(ctx, topX, topY, botY, segs);
+        }
+      },
+    };
+  })(),
+});
+</script>
+<script>
+// THEME: bauhaus — 72 black-ink ribbons on flat cream, plus the boldest
+// below-fold transformation: constructivist color blocks (red intro, blue
+// stats, cream footer) split by heavy black borders. Signature pointer
+// interaction is the OFFSET-PRINT COMB: horizontal-only mis-registration.
+// See CONTRACT.md.
+window.CRAC_THEMES = window.CRAC_THEMES || [];
+window.CRAC_THEMES.push({
+  id: 'bauhaus',
+  label: 'bauhaus',
+  order: 6,
+  dark: false,
+  vars: {
+    '--bg':      '#efe7d6',   // cream
+    '--fg':      '#111010',   // black ink
+    '--accent':  '#e0301e',   // primary red
+    '--ribbon':  '#111010',   // ink ribbons over the hero
+    '--wash':    '#efe7d6',   // hero background
+    '--nav-fg':  '#111010',   // dark nav text — light theme over the hero
+    '--line':    'rgba(17,16,16,0.18)',
+    '--soft':    'rgba(17,16,16,0.62)',
+    // Constructivist primaries — read by css below.
+    '--bau-red':    '#e0301e',
+    '--bau-blue':   '#1d36b8',
+    '--bau-yellow': '#f6bf02',
+    // Light, flat surface: solid nav blend, dark nav fg, no grain.
+    '--nav-blend': 'normal',
+    '--grain-opacity': '0',
+    '--grain-blend': 'normal',
+  },
+
+  // Below-fold flavor: the boldest of all themes. Intro block goes full-bleed
+  // red with cream/black text; stats block goes blue with cream text and
+  // washed-out borders; footer is cream with black text. Heavy 6px black
+  // borders divide the sections. Shared markup stays readable; .reveal
+  // mechanics are untouched.
+  css: `
+    html[data-theme="bauhaus"] body { background: var(--bg); color: var(--fg); }
+
+    /* Solid cream nav bar with a hard black rule — black-on-cream reads
+       everywhere as the bold color blocks scroll under it. */
+    html[data-theme="bauhaus"] nav {
+      background: var(--bg);
+      border-bottom: 2px solid var(--fg);
+    }
+    html[data-theme="bauhaus"] .nav-wordmark { color: var(--nav-fg); }
+    html[data-theme="bauhaus"] .nav-index { color: var(--nav-fg); }
+    html[data-theme="bauhaus"] .nav-right {
+      color: var(--nav-fg);
+      border-bottom: 2px solid var(--fg);
+    }
+    html[data-theme="bauhaus"] .nav-right:hover { color: var(--bau-red); border-color: var(--bau-red); }
+
+    /* Hero sits on flat cream with a heavy black rule splitting it from the
+       first color block. */
+    html[data-theme="bauhaus"] .hero {
+      background: var(--bg);
+      border-bottom: 6px solid var(--fg);
+    }
+    html[data-theme="bauhaus"] .scroll-cue { color: var(--fg); mix-blend-mode: normal; }
+
+    html[data-theme="bauhaus"] main { background: var(--bg); }
+
+    /* Heavy black borders divide every section. */
+    html[data-theme="bauhaus"] .block { border-bottom: 6px solid var(--fg); }
+
+    /* INTRO → full-bleed RED, cream body text with black emphasis pop. */
+    html[data-theme="bauhaus"] .intro-block {
+      background: var(--bau-red);
+      color: var(--bg);
+    }
+    html[data-theme="bauhaus"] .intro-block .eyebrow,
+    html[data-theme="bauhaus"] .intro-block .eyebrow .lbl,
+    html[data-theme="bauhaus"] .intro-block .eyebrow .date { color: var(--bg); }
+    html[data-theme="bauhaus"] .intro-block .eyebrow::before { background: currentColor; }
+    html[data-theme="bauhaus"] .intro-block .lede { color: var(--bg); }
+    html[data-theme="bauhaus"] .intro-block .lede em { font-style: normal; color: var(--fg); }
+
+    /* STATS → full-bleed BLUE: the background goes on the SECTION (the .block),
+       not the inner centered .wrap, so the slab runs edge to edge. */
+    html[data-theme="bauhaus"] main .block:nth-child(2) {
+      background: var(--bau-blue);
+      color: var(--bg);
+    }
+    html[data-theme="bauhaus"] .stat-item {
+      border-top: 4px solid rgba(239,231,214,0.85);
+      border-bottom: none;
+    }
+    html[data-theme="bauhaus"] .stat-number { color: var(--bg); }
+    html[data-theme="bauhaus"] .stat-label { color: var(--bg); opacity: 0.9; }
+
+    /* FOOTER → cream with black text. No bottom border (it's the end). */
+    html[data-theme="bauhaus"] footer {
+      background: var(--bg);
+      color: var(--fg);
+      border-bottom: none;
+    }
+    html[data-theme="bauhaus"] .footer-left { color: var(--fg); }
+    html[data-theme="bauhaus"] footer a { color: var(--fg); }
+    html[data-theme="bauhaus"] footer a:hover { color: var(--bau-red); }
+
+    /* Flat and clean: no grain texture, no vignette atmosphere. */
+    html[data-theme="bauhaus"] body::before { opacity: 0; }
+    html[data-theme="bauhaus"] body::after { opacity: 0; }
+  `,
+
+  hero: (function () {
+    const THIN_W = 1.6, THICK_W = 16;
+    const WAVE_AMP = 7, WAVE_FREQ = 0.0058, WAVE_SPEED = 0.42;
+
+    // Signature pointer interaction: OFFSET-PRINT COMB. Within COMB_RADIUS the
+    // lines shear purely HORIZONTALLY in alternating directions — even lines
+    // slide +x, odd lines slide -x — up to COMB_SHIFT at the cursor. Vertical
+    // positions and ribbon widths are untouched, so "crac" never tears; it just
+    // locally combs into mis-registered plates. Falloff is a squared-distance
+    // smoothstep; sign comes from the line index. Scaled by env.ptr.strength.
+    const COMB_RADIUS = 150;
+    const COMB_R2 = COMB_RADIUS * COMB_RADIUS;
+    const COMB_SHIFT = 10;
+
+    // Scratch arrays, lazily sized to the segment count.
+    let topX = null, topY = null, botY = null;
+    function ensureScratch(n) {
+      if (!topX || topX.length !== n) {
+        topX = new Float32Array(n);
+        topY = new Float32Array(n);
+        botY = new Float32Array(n);
+      }
+    }
+
+    return {
+      lineCount: 72,
+      segments: 160,   // low segment count is part of the clean Bauhaus look
+      maskScale: 0.46,
+
+      draw(env) {
+        const { ctx, w, h, weights, segs, lines, shape } = env;
+        ensureScratch(segs + 1);
+
+        ctx.fillStyle = env.cssVar('--wash');
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = env.cssVar('--ribbon');
+        const px = env.ptr.x, py = env.ptr.y;
+        const shiftAmt = COMB_SHIFT * env.ptr.strength;
+        const combOn = shiftAmt > 0.001;
+
+        for (let i = 0; i < lines; i++) {
+          const phase  = i * 0.31 + env.waveT * WAVE_SPEED;
+          const phase2 = i * 0.17 + env.waveT * WAVE_SPEED * 0.7 + 1.1;
+          const yBase  = (i + 0.5) / lines * h;
+          const base   = i * (segs + 1);
+          const lineBreath = env.breath(i);
+
+          // Cheap per-line band skip: if the line's base y is well outside the
+          // comb's vertical reach, no segment can shear.
+          const lineCombs = combOn && Math.abs(yBase - py) < COMB_RADIUS;
+          const dirShift  = (i & 1) ? -shiftAmt : shiftAmt;
+
+          for (let s = 0; s <= segs; s++) {
+            let x = (s / segs) * w;
+            const y = yBase
+                    + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                    + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+
+            // Offset print: slip this segment in x only, scaled by a
+            // squared-distance smoothstep to the pointer. y and width stay put.
+            if (lineCombs) {
+              const dx = x - px, dy = y - py;
+              const d2 = dx * dx + dy * dy;
+              if (d2 < COMB_R2) {
+                let t = 1 - d2 / COMB_R2;        // 1 at center, 0 at edge (sq falloff)
+                t = t * t * (3 - 2 * t);         // smoothstep
+                x += dirShift * t;
+              }
+            }
+
+            const wgt = shape(weights[base + s]) * env.entrance(s / segs) * lineBreath;
+            const half = (THIN_W + (THICK_W - THIN_W) * wgt) * 0.5;
+            topX[s] = x; topY[s] = y - half; botY[s] = y + half;
+          }
+
+          ctx.beginPath();
+          ctx.moveTo(topX[0], topY[0]);
+          for (let s = 1; s <= segs; s++) ctx.lineTo(topX[s], topY[s]);
+          for (let s = segs; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+          ctx.closePath();
+          ctx.fill();
+        }
+      },
+    };
+  })(),
+});
+</script>
+<!-- pastel benched: themes/pastel.theme.js exists but isn't in the rotation -->
+<script>
+// THEME: blueprint — a cyanotype. Pale cyan ribbons over deep prussian, each
+// line's alpha scaled by its peak word weight so "crac" glows out of the sheet.
+// Signature pointer interaction is THE T-SQUARE: a draftsman's straightedge
+// overlay (hairline + glow band + edge ticks) that never distorts the ribbons.
+// Below-fold reads as a sheet of drafting paper. See CONTRACT.md.
+window.CRAC_THEMES = window.CRAC_THEMES || [];
+window.CRAC_THEMES.push({
+  id: 'blueprint',
+  label: 'blueprint',
+  order: 8,
+  dark: true,
+  vars: {
+    // Deep prussian is the representative bg/wash so the hero canvas and the
+    // page background read as the same sheet. The lighter #143a6b is used as a
+    // gradient lift below-fold via css (--blue-lift), not as --bg.
+    '--bg':      '#0f2d52',   // deep prussian
+    '--fg':      '#dceefb',   // pale cyan-white ink
+    '--accent':  '#8fc7ff',   // sky-blue accent
+    '--ribbon':  '#dceefb',   // structural fallback; hero recolors per line w/ alpha
+    '--wash':    '#0f2d52',   // sheet behind the ribbons
+    '--nav-fg':  '#dceefb',   // pale nav ink over prussian
+    '--line':    'rgba(220,238,251,0.14)',
+    '--soft':    'rgba(220,238,251,0.55)',
+    '--nav-blend': 'normal',  // dark sheet: pale nav fg, normal blend (no difference)
+    '--grain-opacity': '0',   // no grain — the drafting grid is the texture
+    '--grain-blend': 'normal',
+    '--font-label': "'Space Grotesk', ui-monospace, 'SFMono-Regular', Menlo, monospace",
+    // Blueprint specials.
+    '--blue-lift':   '#143a6b',                 // lighter prussian for below-fold gradient
+    '--grid-major':  'rgba(220,238,251,0.11)',  // major drafting lines (every 200px)
+    '--grid-minor':  'rgba(220,238,251,0.055)', // minor drafting lines (every 40px)
+    '--ink-label':   'rgba(220,238,251,0.52)',  // legible small annotation text
+    '--ink-faint':   'rgba(220,238,251,0.30)',  // hairline decorations
+  },
+
+  css: `
+    /* Below-fold sheet: the body stays solid var(--bg) (it interpolates on
+       switch); the lighter prussian lift rides the atmosphere slot below,
+       which dips through the swap. */
+
+    /* DRAFTING GRID texture slot: minor lines every 40px (faint), brighter
+       major lines every 200px — fixed behind everything like a sheet of
+       drafting paper. Replaces the default grain. */
+    html[data-theme="blueprint"] body::before {
+      background-image:
+        linear-gradient(var(--grid-major) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+        linear-gradient(var(--grid-minor) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px);
+      background-size: 200px 200px, 200px 200px, 40px 40px, 40px 40px;
+      opacity: 1;
+      mix-blend-mode: normal;
+    }
+    /* Atmosphere slot: a restrained corner vignette so the grid falls off at
+       the edges and the sheet feels lit from the centre. */
+    html[data-theme="blueprint"] body::after {
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(20,58,107,0.55), rgba(20,58,107,0) 65%),
+        radial-gradient(120% 90% at 50% -8%, rgba(220,238,251,0.05), rgba(220,238,251,0) 55%),
+        radial-gradient(135% 130% at 50% 50%, rgba(0,0,0,0) 62%, rgba(6,18,38,0.55) 100%);
+    }
+
+    /* Eyebrow / annotation reads as a drafting callout in sky-blue. */
+    html[data-theme="blueprint"] .eyebrow,
+    html[data-theme="blueprint"] .eyebrow .lbl { color: var(--accent); }
+    html[data-theme="blueprint"] .eyebrow::before { background: var(--accent); }
+    html[data-theme="blueprint"] .eyebrow .date { color: var(--ink-label); }
+
+    html[data-theme="blueprint"] .lede strong,
+    html[data-theme="blueprint"] .lede em { color: var(--accent); font-style: normal; }
+
+    /* SPEC-SHEET stats: bordered rows like a parameter table, with a boxed
+       frame around the whole block and mono-ish labels (via --font-label).
+       The first/third stat numbers already read as accent from the structural
+       rule; we keep that and add the table chrome. */
+    html[data-theme="blueprint"] .stats {
+      border: 1px solid var(--grid-major);
+    }
+    html[data-theme="blueprint"] .stat-item {
+      border-bottom: 1px solid var(--grid-major);
+      padding: 28px 22px;
+      grid-template-columns: minmax(120px, 0.4fr) 1fr;
+    }
+    html[data-theme="blueprint"] .stat-item:first-child { border-top: none; }
+    html[data-theme="blueprint"] .stat-item:last-child { border-bottom: none; }
+    html[data-theme="blueprint"] .stat-label {
+      font-family: var(--font-label);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: clamp(11px, 1.3vw, 13px);
+      color: var(--ink-label);
+      opacity: 1;
+    }
+
+    /* Footer reads as a title-block: a bordered cell with a faint frame. */
+    html[data-theme="blueprint"] footer { border-top: 1px solid var(--grid-major); }
+    html[data-theme="blueprint"] .footer-left {
+      font-family: var(--font-label);
+      letter-spacing: 0.1em;
+      border: 1px solid var(--grid-major);
+      padding: 16px 20px;
+      color: var(--fg);
+    }
+    html[data-theme="blueprint"] .footer-left a:hover { color: var(--accent); }
+
+    html[data-theme="blueprint"] .scroll-cue { color: var(--soft); mix-blend-mode: normal; }
+  `,
+
+  hero: (function () {
+    const THIN_W = 1.2, THICK_W = 13.5;
+    const WAVE_AMP = 7, WAVE_FREQ = 0.0058, WAVE_SPEED = 0.36;
+
+    // Signature pointer interaction: THE T-SQUARE. The cursor is a draftsman's
+    // straightedge sliding across the sheet — a 1px full-height hairline at the
+    // smoothed pointer x, a soft glow band (~36px half-width) beneath it, and
+    // tiny ticks where it meets the top/bottom edges. The ribbons are NEVER
+    // distorted; the overlay is drawn AFTER them and faded by env.ptr.strength.
+    const TSQ_BAND = 36;          // glow-band half-width (px)
+    const TSQ_BAND_ALPHA = 0.05;  // peak band alpha at full strength
+    const TSQ_LINE_ALPHA = 0.14;  // hairline / tick alpha at full strength
+
+    // Two-pass glow: a wider, low-alpha pass under a crisp pass so the bright
+    // (heavy-weight) ribbons bloom slightly, like exposed cyanotype.
+    const GLOW_WIDEN = 5;         // extra px of width on the glow pass
+    const GLOW_ALPHA_SCALE = 0.4; // glow pass alpha is a fraction of the crisp
+
+    // Scratch arrays, lazily sized to the segment count.
+    let topX = null, topY = null, botY = null;
+    function ensureScratch(n) {
+      if (!topX || topX.length !== n) {
+        topX = new Float32Array(n);
+        topY = new Float32Array(n);
+        botY = new Float32Array(n);
+      }
+    }
+
+    // Parse '#rrggbb' OR 'rgb(r, g, b)' into [r,g,b]. During a theme crossfade
+    // the registered custom properties interpolate, and getComputedStyle then
+    // reports rgb() strings — hex-only parsing would make the ribbons snap to
+    // the fallback while everything else rides the fade. Cached per (slot,str).
+    const rgbCacheStr = ['', ''];
+    const rgbCacheVal = [[220, 238, 251], [143, 199, 255]];
+    function toRGB(str, slot) {
+      if (str === rgbCacheStr[slot]) return rgbCacheVal[slot];
+      const out = rgbCacheVal[slot];
+      const s = str.trim();
+      if (s.charCodeAt(0) === 35 && s.length >= 7) {
+        out[0] = parseInt(s.slice(1, 3), 16);
+        out[1] = parseInt(s.slice(3, 5), 16);
+        out[2] = parseInt(s.slice(5, 7), 16);
+      } else {
+        const m = s.match(/[\d.]+/g);
+        if (m && m.length >= 3) { out[0] = +m[0]; out[1] = +m[1]; out[2] = +m[2]; }
+      }
+      rgbCacheStr[slot] = str;
+      return out;
+    }
+
+    // Per-line peak word weight, cached so the alpha-per-line is computed once.
+    // Keyed to the env.weights identity: when the shell rebuilds the mask
+    // (resize / lineCount change) it hands us a NEW Float32Array, which is our
+    // signal to recompute. shape() is applied here to match the source, which
+    // shaped weights before taking the peak.
+    let lineMaxW = null;          // Float32Array[lines] of peak shaped weight
+    let weightsRef = null;        // identity of the weights array we cached for
+
+    function computeLineMaxima(env) {
+      const { weights, segs, lines, shape } = env;
+      if (!lineMaxW || lineMaxW.length !== lines) lineMaxW = new Float32Array(lines);
+      for (let i = 0; i < lines; i++) {
+        const base = i * (segs + 1);
+        let maxW = 0;
+        for (let s = 0; s <= segs; s++) {
+          const w = shape(weights[base + s]);
+          if (w > maxW) maxW = w;
+        }
+        lineMaxW[i] = maxW;
+      }
+      weightsRef = weights;
+    }
+
+    return {
+      lineCount: 64,
+      segments: 260,
+      maskScale: 0.46,
+
+      // Precompute per-line peak weight maxima from the freshly-built mask.
+      // Called on activation and after every resize/rebuild.
+      init(env) {
+        computeLineMaxima(env);
+      },
+
+      draw(env) {
+        const { ctx, w, h, weights, segs, lines, shape } = env;
+        ensureScratch(segs + 1);
+
+        // Recompute the cached maxima if the shell handed us a new weights
+        // array since we last looked (defensive — init() normally covers it).
+        if (weights !== weightsRef || !lineMaxW || lineMaxW.length !== lines) {
+          computeLineMaxima(env);
+        }
+
+        // Sheet wash behind the ribbons (deep prussian).
+        ctx.fillStyle = env.cssVar('--wash');
+        ctx.fillRect(0, 0, w, h);
+
+        // Pale cyan ink, read this frame so the whole hero crossfades on switch
+        // (handles both hex and the rgb() strings computed mid-transition).
+        const ink = toRGB(env.cssVar('--fg'), 0);
+        const inkPrefix = 'rgba(' + ink[0] + ',' + ink[1] + ',' + ink[2] + ',';
+
+        for (let i = 0; i < lines; i++) {
+          const phase  = i * 0.31 + env.waveT * WAVE_SPEED;
+          const phase2 = i * 0.17 + env.waveT * WAVE_SPEED * 0.7 + 1.1;
+          const yBase  = (i + 0.5) / lines * h;
+          const base   = i * (segs + 1);
+          const lineBreath = env.breath(i);
+
+          // Per-line alpha rises with the line's peak word weight so the
+          // wordmark glows out of the sheet: 0.16 + 0.74 * maxW.
+          const alpha = 0.16 + 0.74 * lineMaxW[i];
+          const crispCol = inkPrefix + alpha.toFixed(3) + ')';
+          const glowCol  = inkPrefix + (alpha * GLOW_ALPHA_SCALE).toFixed(3) + ')';
+
+          // ── Glow pass: ~5px wider at low alpha, beneath the crisp pass. ──
+          for (let s = 0; s <= segs; s++) {
+            const x = (s / segs) * w;
+            const y = yBase
+                    + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                    + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+            // entrance + breath multiply into the WORD weight only.
+            const wgt = shape(weights[base + s]) * env.entrance(s / segs) * lineBreath;
+            const half = (THIN_W + (THICK_W - THIN_W) * wgt) * 0.5 + GLOW_WIDEN * 0.5;
+            topX[s] = x; topY[s] = y - half; botY[s] = y + half;
+          }
+          ctx.fillStyle = glowCol;
+          ctx.beginPath();
+          ctx.moveTo(topX[0], topY[0]);
+          for (let s = 1; s <= segs; s++) ctx.lineTo(topX[s], topY[s]);
+          for (let s = segs; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+          ctx.closePath();
+          ctx.fill();
+
+          // ── Crisp pass: the true ribbon width at full per-line alpha. ──
+          for (let s = 0; s <= segs; s++) {
+            const x = (s / segs) * w;
+            const y = yBase
+                    + Math.sin(x * WAVE_FREQ + phase) * WAVE_AMP
+                    + Math.sin(x * WAVE_FREQ * 1.7 + phase2) * WAVE_AMP * 0.35;
+            const wgt = shape(weights[base + s]) * env.entrance(s / segs) * lineBreath;
+            const half = (THIN_W + (THICK_W - THIN_W) * wgt) * 0.5;
+            topX[s] = x; topY[s] = y - half; botY[s] = y + half;
+          }
+          ctx.fillStyle = crispCol;
+          ctx.beginPath();
+          ctx.moveTo(topX[0], topY[0]);
+          for (let s = 1; s <= segs; s++) ctx.lineTo(topX[s], topY[s]);
+          for (let s = segs; s >= 0; s--) ctx.lineTo(topX[s], botY[s]);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // ── THE T-SQUARE ───────────────────────────────────────────────────
+        // Drawn AFTER the ribbons, never touching their geometry. A 1px pale
+        // sky-blue hairline at the smoothed pointer x, a soft glow band beneath
+        // it, and small ticks at the top/bottom edges. All faded by ptr.strength
+        // (which the shell forces to 0 during transitions and reduced motion).
+        const str = env.ptr.strength;
+        if (str > 0.002) {
+          const hx = env.ptr.x;
+
+          // Accent (sky-blue) channels for the straightedge.
+          const acc = toRGB(env.cssVar('--accent'), 1);
+          const accPrefix = 'rgba(' + acc[0] + ',' + acc[1] + ',' + acc[2] + ',';
+
+          // Glow band: the sheet reads as lit beneath the straightedge.
+          const bandA = (str * TSQ_BAND_ALPHA).toFixed(3);
+          const grad = ctx.createLinearGradient(hx - TSQ_BAND, 0, hx + TSQ_BAND, 0);
+          grad.addColorStop(0,   accPrefix + '0)');
+          grad.addColorStop(0.5, accPrefix + bandA + ')');
+          grad.addColorStop(1,   accPrefix + '0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(hx - TSQ_BAND, 0, TSQ_BAND * 2, h);
+
+          // Hairline + edge ticks: 1px sky-blue, full height.
+          ctx.fillStyle = accPrefix + (str * TSQ_LINE_ALPHA).toFixed(3) + ')';
+          ctx.fillRect(hx - 0.5, 0, 1, h);       // hairline
+          ctx.fillRect(hx - 1.5, 0, 3, 1);       // top tick
+          ctx.fillRect(hx - 1.5, h - 1, 3, 1);   // bottom tick
+        }
+      },
+    };
+  })(),
+});
+</script>
+
+<script>
+// Mark that JS is live so CSS may hide .reveal elements. Without this class
+// (no-JS or a parse error in this block) everything stays fully visible.
+document.documentElement.classList.add('js');
+
+// ── TRIMESTER DATE ───────────────────────────────────────────────────────────
+(function(){
+  const el = document.getElementById('meet');
+  if (!el) return;
+  const dateEl = el.querySelector('.date');
+  if (!dateEl) return;
+
+  const now = new Date(), starts = [0, 4, 8], yr = now.getFullYear();
+  let next = null;
+  for (const y of [yr, yr + 1]) {
+    for (const m of starts) {
+      const d = new Date(y, m, 1);
+      if (d > now) { next = d; break; }
+    }
+    if (next) break;
+  }
+  if (!next) next = new Date(yr + 1, starts[0], 1);
+
+  function ord(d) {
+    if (d % 100 >= 11 && d % 100 <= 13) return 'th';
+    switch (d % 10) { case 1: return 'st'; case 2: return 'nd'; case 3: return 'rd'; default: return 'th'; }
+  }
+  const month = next.toLocaleDateString('en-US', { month: 'long' });
+  const day = next.getDate();
+  dateEl.innerHTML = '';
+  dateEl.append(month + ' ' + day);
+  const sup = document.createElement('sup');
+  sup.textContent = ord(day);
+  dateEl.append(sup, ' ' + next.getFullYear());
+})();
+
+// ── ENTRANCE CHOREOGRAPHY (nav + scroll cue, first load only) ────────────────
+(function(){
+  const nav = document.querySelector('nav');
+  const cue = document.querySelector('.scroll-cue');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let begun = false;
+  function begin() {
+    if (begun) return;
+    begun = true;
+    if (reduce) {
+      if (nav) nav.classList.add('in');
+      if (cue) cue.classList.add('in');
+      return;
+    }
+    if (nav) setTimeout(() => nav.classList.add('in'), 1500);
+    if (cue) setTimeout(() => cue.classList.add('in'), 2000);
+  }
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(begin);
+    setTimeout(begin, 1500);
+  } else {
+    begin();
+  }
+
+  if (cue) {
+    const onScroll = () => {
+      if (window.scrollY > 10) {
+        cue.classList.add('gone');
+        window.removeEventListener('scroll', onScroll);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+})();
+
+// ── SCROLL REVEAL ────────────────────────────────────────────────────────────
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const items = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(el => el.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+  items.forEach(el => io.observe(el));
+  const finishIfBottom = () => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      items.forEach(el => el.classList.add('in'));
+      window.removeEventListener('scroll', finishIfBottom);
+    }
+  };
+  window.addEventListener('scroll', finishIfBottom, { passive: true });
+  finishIfBottom();
+})();
+
+// ── THE CHANGER ENGINE ───────────────────────────────────────────────────────
+// Owns everything shared between themes: the "crac" mask, the wave & animation
+// clocks, the one-shot entrance + settled breath + theme-switch un-ink/re-ink
+// (exposed to renderers as env.entrance/env.breath), smoothed pointer state,
+// CSS custom-property registration (so theme colors INTERPOLATE on switch — the
+// renderers read colors back via env.cssVar each frame and ride the crossfade),
+// pause/resume, and the logo-click cycle. Each theme contributes palette vars,
+// scoped CSS flavor, and a hero renderer. See themes/CONTRACT.md.
+(function () {
+  const html = document.documentElement;
+  const canvas = document.getElementById('waveCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const MAX_DPR = 2;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const themes = (window.CRAC_THEMES || []).slice().sort((a, b) => (a.order || 99) - (b.order || 99));
+  if (!themes.length) return;
+
+  // ── CSS VAR REGISTRATION + THEME CSS INJECTION ─────────────────────────────
+  // Register every color-valued var across all themes so they animate during a
+  // switch; collect the union of var names so applyTheme can clear stale ones.
+  const COLOR_RE = /^(#|rgb|hsl|oklch|color\()/i;
+  const registeredVars = [];
+  const allVarNames = new Set();
+  const seen = new Set();
+  themes.forEach(t => {
+    Object.entries(t.vars || {}).forEach(([name, value]) => {
+      allVarNames.add(name);
+      if (seen.has(name)) return;
+      seen.add(name);
+      if (!COLOR_RE.test(String(value).trim())) return;
+      try {
+        CSS.registerProperty({ name, syntax: '<color>', inherits: true, initialValue: String(value) });
+        registeredVars.push(name);
+      } catch (e) { /* unsupported or duplicate — falls back to instant swap */ }
+    });
+  });
+  const styleEl = document.createElement('style');
+  styleEl.textContent =
+    (registeredVars.length
+      ? 'html.theming { transition: ' + registeredVars.map(p => p + ' 1.25s ease').join(', ') + '; }\n'
+      : '') +
+    themes.map(t => t.css || '').join('\n');
+  document.head.appendChild(styleEl);
+  // Vars that interpolate (successfully registered colors). Only these may be
+  // applied early at click time — discrete vars (fonts, blend modes, opacities)
+  // would otherwise flash the new theme's style ahead of the swap.
+  const colorVars = new Set(registeredVars);
+
+  // ── SHARED HELPERS ──────────────────────────────────────────────────────────
+  function shape(w) {
+    w = (w - 0.10) / 0.78;
+    if (w <= 0) return 0;
+    if (w >= 1) return 1;
+    return w * w * (3 - 2 * w);
+  }
+  function ease01(t) {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    return t * t * (3 - 2 * t);
+  }
+
+  // ── STATE ───────────────────────────────────────────────────────────────────
+  let active = null, activeIdx = 0, pendingIdx = null;
+  let weights = null, segs = 0, lines = 0;
+  let pw = 0, ph = 0, currentDpr = 1;
+  let heroRect = { left: 0, top: 0 };
+
+  // Clocks. waveT (per-frame, derived from startTime) resets on pause/resume so
+  // the waves never lurch; animT accumulates real played time and never resets,
+  // so entrances don't replay and breath phase stays continuous.
+  let startTime = null, lastTs = null, rafId = null;
+  let animT = 0;
+
+  // Entrance / transition state machine: 'in' → 'steady' → ('out' → swap → 'in').
+  const IN_FIRST = { hold: 0.3, sweep: 0.85, rate: 1.5 };   // first load (01b timing)
+  const IN_FAST  = { hold: 0.05, sweep: 0.65, rate: 2.0 };  // after a switch
+  const OUT_SWEEP = 0.30, OUT_RATE = 4.5;                   // un-ink, right→left
+  let IN = IN_FIRST;
+  let mode = reduceMotion ? 'steady' : 'in';
+  let modeT = 0;
+  let entranceDoneAt = reduceMotion ? 0 : null;
+
+  function entrance(xn) {
+    if (mode === 'steady') return 1;
+    if (mode === 'in') return ease01((modeT - IN.hold - xn * IN.sweep) * IN.rate);
+    return 1 - ease01((modeT - (1 - xn) * OUT_SWEEP) * OUT_RATE);   // 'out'
+  }
+  function breath(i) {
+    if (reduceMotion || mode !== 'steady' || entranceDoneAt === null) return 1;
+    const env = ease01((animT - entranceDoneAt) / 1.6) * 0.15;
+    return 1 - env * (0.5 + 0.5 * Math.sin(animT * 0.55 + i * 0.04));
+  }
+
+  // ── POINTER (shared smoothing; themes consume env.ptr) ─────────────────────
+  let ptrTargetX = 0, ptrTargetY = 0, ptrX = 0, ptrY = 0;
+  let ptrTargetStrength = 0, ptrStrength = 0, ptrSeeded = false;
+  let ptrClientX = 0, ptrClientY = 0, ptrHasClient = false;
+  const POINTER_LERP = 0.08, STRENGTH_LERP = 0.10;
+
+  // ── CSS VAR READBACK (cached per frame) ─────────────────────────────────────
+  let varCache = null, computedStyle = null;
+  function cssVar(name) {
+    if (!varCache) { computedStyle = getComputedStyle(html); varCache = {}; }
+    if (!(name in varCache)) varCache[name] = computedStyle.getPropertyValue(name).trim();
+    return varCache[name];
+  }
+
+  // The env object handed to every renderer (mutated per frame, never replaced).
+  const env = {
+    ctx, w: 0, h: 0,
+    weights: null, segs: 0, lines: 0,
+    shape, ease01,
+    waveT: 0, animT: 0,
+    entrance, breath,
+    ptr: { x: 0, y: 0, strength: 0 },
+    cssVar,
+    reduceMotion,
+    theme: null,
+  };
+
+  // ── MASK / WEIGHTS (shared "crac" builder, per-theme dimensions) ────────────
+  let maskCanvas = null, maskCtx = null;
+  function buildWeights() {
+    const hero = canvas.parentElement;
+    const w = hero.clientWidth || 640, h = hero.clientHeight || 480;
+    if (w < 1 || h < 1) return;
+    segs = active.hero.segments;
+    lines = active.hero.lineCount;
+
+    if (!maskCanvas) {
+      maskCanvas = document.createElement('canvas');
+      maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    maskCanvas.width = w;
+    maskCanvas.height = h;
+    maskCtx.clearRect(0, 0, w, h);
+
+    let fontSize = Math.round(h * (active.hero.maskScale || 0.42));
+    maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    const maxW = w * 0.78;
+    const measured = maskCtx.measureText('crac').width;
+    if (measured > maxW) {
+      fontSize = Math.floor(fontSize * maxW / measured);
+      maskCtx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+    }
+    maskCtx.textAlign = 'center';
+    maskCtx.textBaseline = 'middle';
+    maskCtx.fillStyle = '#000000';
+    maskCtx.fillText('crac', w / 2, h / 2);
+    const data = maskCtx.getImageData(0, 0, w, h).data;
+
+    weights = new Float32Array(lines * (segs + 1));
+    const blurRows = Math.max(1, Math.round(h / lines * 0.34));
+    for (let i = 0; i < lines; i++) {
+      const yCenter = (i + 0.5) / lines * h;
+      const yMin = Math.max(0, Math.round(yCenter - blurRows));
+      const yMax = Math.min(h - 1, Math.round(yCenter + blurRows));
+      for (let s = 0; s <= segs; s++) {
+        const x = Math.min(w - 1, Math.max(0, Math.round(s / segs * w)));
+        let sum = 0, count = 0;
+        for (let ry = yMin; ry <= yMax; ry++) { sum += data[(ry * w + x) * 4 + 3]; count++; }
+        weights[i * (segs + 1) + s] = sum / count / 255;
+      }
+    }
+  }
+
+  function resize() {
+    const hero = canvas.parentElement;
+    currentDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    const w = hero.clientWidth, h = hero.clientHeight;
+    canvas.width = w * currentDpr;
+    canvas.height = h * currentDpr;
+    ctx.setTransform(currentDpr, 0, 0, currentDpr, 0, 0);
+    const r = canvas.getBoundingClientRect();
+    heroRect.left = r.left;
+    heroRect.top = r.top;
+    if (active) buildWeights();
+  }
+
+  // ── THEME APPLICATION + SWITCHING ───────────────────────────────────────────
+  const logoDial = document.getElementById('logoDial');
+  const faviconEl = document.getElementById('favicon');
+
+  // The dial dot sweeps to angle activeIdx/N around the logo face. Rotation
+  // accumulates so the dot always travels FORWARD (theme 8 → 1 keeps spinning
+  // clockwise instead of unwinding a full turn).
+  let dialRot = 0;
+  function setDial() {
+    if (!logoDial) return;
+    const target = activeIdx * (360 / themes.length);
+    const cur = ((dialRot % 360) + 360) % 360;
+    dialRot += (target - cur + 360) % 360;
+    logoDial.style.transform = 'rotate(' + dialRot + 'deg)';
+  }
+
+  function setFavicon(t) {
+    if (!faviconEl) return;
+    const bg = encodeURIComponent((t.vars && t.vars['--bg']) || '#0d0c0b');
+    const fg = encodeURIComponent((t.vars && (t.vars['--ribbon'] || t.vars['--fg'])) || '#efe7d6');
+    faviconEl.href = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='" + bg + "'/%3E%3Ccircle cx='16' cy='16' r='12' stroke='" + fg + "' stroke-width='2' fill='none'/%3E%3Ccircle cx='16' cy='16' r='7' stroke='" + fg + "' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='16' cy='16' r='2' fill='" + fg + "'/%3E%3C/svg%3E";
+  }
+
+  // interpolatingOnly: set just the registered color vars (the ones that fade).
+  // Discrete vars — font stacks, blend modes, grain opacities — snap, so they
+  // are withheld until the real swap (doSwap → applyTheme) to stay in sync
+  // with the data-theme flip.
+  function applyVars(t, interpolatingOnly) {
+    allVarNames.forEach(name => {
+      if (interpolatingOnly && !colorVars.has(name)) return;
+      if (t.vars && name in t.vars) html.style.setProperty(name, t.vars[name]);
+      else html.style.removeProperty(name);
+    });
+  }
+
+  function applyTheme(t) {
+    active = t;
+    env.theme = t;
+    html.dataset.theme = t.id;
+    applyVars(t);
+    setFavicon(t);
+    setDial();
+    try { localStorage.setItem('crac:theme', t.id); } catch (e) { /* private mode etc. */ }
+    buildWeights();
+    if (t.hero.init) t.hero.init(env);
+  }
+
+  // .theming gates all the crossfade CSS; one timer so rapid clicks never
+  // strand the class on or strip it mid-fade.
+  let themingTimer = null;
+  function beginTheming() {
+    clearTimeout(themingTimer);
+    html.classList.add('theming');
+  }
+  function endThemingSoon(ms) {
+    clearTimeout(themingTimer);
+    themingTimer = setTimeout(() => html.classList.remove('theming'), ms);
+  }
+
+  function doSwap() {
+    activeIdx = pendingIdx;
+    pendingIdx = null;
+    applyTheme(themes[activeIdx]);
+    IN = IN_FAST;
+    mode = 'in';
+    modeT = 0;
+    endThemingSoon(1500);
+  }
+
+  function requestSwitch(nextIdx) {
+    nextIdx = ((nextIdx % themes.length) + themes.length) % themes.length;
+    if (nextIdx === activeIdx && mode !== 'out') return;
+    if (reduceMotion) {
+      activeIdx = nextIdx;
+      applyTheme(themes[activeIdx]);
+      return;
+    }
+
+    // Hero parked off-screen → the rAF loop (and with it the un-ink/re-ink
+    // choreography) is stopped. Swap directly: the CSS crossfade carries the
+    // below-fold change, and the hero is already wearing the new theme when
+    // it scrolls back into view.
+    if (!rafId) {
+      activeIdx = nextIdx;
+      pendingIdx = null;
+      beginTheming();
+      applyTheme(themes[activeIdx]);
+      mode = 'steady';
+      endThemingSoon(1400);
+      return;
+    }
+
+    pendingIdx = nextIdx;
+    beginTheming();
+    // Colors start drifting NOW, while the old word is still un-inking — the
+    // world begins to turn before the word has left. Colors ONLY: discrete
+    // vars ride along at the swap itself (data-theme, weights, renderer all
+    // flip together in doSwap).
+    applyVars(themes[nextIdx], true);
+    if (mode === 'out') return;          // already un-inking; latest target wins
+    mode = 'out';
+    modeT = 0;
+  }
+
+  // ── DRAW LOOP ───────────────────────────────────────────────────────────────
+  function draw(ts) {
+    if (!startTime) startTime = ts;
+    if (lastTs === null) lastTs = ts;
+    const dt = Math.min((ts - lastTs) * 0.001, 0.1);
+    lastTs = ts;
+    if (!reduceMotion) { animT += dt; modeT += dt; }
+
+    // Mode progression
+    if (mode === 'in' && modeT >= IN.hold + IN.sweep + 1 / IN.rate + 0.05) {
+      mode = 'steady';
+      if (entranceDoneAt === null || IN === IN_FAST) entranceDoneAt = animT;
+    } else if (mode === 'out' && modeT >= OUT_SWEEP + 1 / OUT_RATE + 0.04) {
+      doSwap();
+    }
+
+    varCache = null;   // fresh computed colors each frame (rides the crossfade)
+    const hero = canvas.parentElement;
+    pw = hero.clientWidth; ph = hero.clientHeight;
+
+    // Pointer smoothing; influence forced out during transitions.
+    if (!reduceMotion) {
+      if (ptrSeeded) {
+        ptrX += (ptrTargetX - ptrX) * POINTER_LERP;
+        ptrY += (ptrTargetY - ptrY) * POINTER_LERP;
+      } else {
+        ptrX = ptrTargetX; ptrY = ptrTargetY;
+      }
+      const tgt = mode === 'steady' ? ptrTargetStrength : 0;
+      ptrStrength += (tgt - ptrStrength) * STRENGTH_LERP;
+    }
+
+    env.w = pw; env.h = ph;
+    env.weights = weights; env.segs = segs; env.lines = lines;
+    env.waveT = (ts - startTime) * 0.001;
+    env.animT = animT;
+    env.ptr.x = ptrX; env.ptr.y = ptrY;
+    env.ptr.strength = ptrStrength > 0.001 ? ptrStrength : 0;
+
+    if (weights) {
+      active.hero.draw(env);
+    } else {
+      ctx.fillStyle = cssVar('--wash') || '#000';
+      ctx.fillRect(0, 0, pw, ph);
+    }
+
+    rafId = requestAnimationFrame(draw);
+  }
+
+  // ── PAUSE / RESUME (tab hidden or hero off-screen) ──────────────────────────
+  let pageVisible = !document.hidden;
+  let heroOnScreen = true;
+  let initialized = false;
+
+  function start() {
+    if (!initialized || rafId || !pageVisible || !heroOnScreen) return;
+    startTime = null;
+    lastTs = null;
+    rafId = requestAnimationFrame(draw);
+  }
+  function stop() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    // Never strand a half-finished switch: if the loop pauses mid-un-ink
+    // (hero scrolled away / tab hidden right after a click), complete the swap
+    // now — the CSS crossfade carries it, and the new word inks in on resume.
+    if (mode === 'out' && pendingIdx !== null) doSwap();
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    pageVisible = !document.hidden;
+    if (pageVisible) start(); else stop();
+  });
+  if ('IntersectionObserver' in window) {
+    const heroIO = new IntersectionObserver((entries) => {
+      heroOnScreen = entries[0].isIntersecting;
+      if (heroOnScreen) start(); else stop();
+    }, { threshold: 0 });
+    heroIO.observe(canvas.parentElement || canvas);
+  }
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      resize();
+      startTime = null;
+    }, 150);
+  });
+
+  // ── POINTER LISTENERS ───────────────────────────────────────────────────────
+  if (!reduceMotion) {
+    const hero = canvas.parentElement || canvas;
+    const easeOut = () => { ptrTargetStrength = 0; };
+
+    function evaluatePointer() {
+      if (!ptrHasClient) return;
+      const lx = ptrClientX - heroRect.left;
+      const ly = ptrClientY - heroRect.top;
+      const hw = canvas.parentElement.clientWidth;
+      const hh = canvas.parentElement.clientHeight;
+      if (lx >= 0 && ly >= 0 && lx <= hw && ly <= hh) {
+        ptrTargetX = lx; ptrTargetY = ly;
+        if (!ptrSeeded) { ptrX = lx; ptrY = ly; ptrSeeded = true; }
+        ptrTargetStrength = 1;
+      } else {
+        ptrTargetStrength = 0;
+      }
+    }
+
+    window.addEventListener('pointermove', (e) => {
+      ptrClientX = e.clientX; ptrClientY = e.clientY; ptrHasClient = true;
+      evaluatePointer();
+    }, { passive: true });
+
+    let scrollRafPending = false;
+    window.addEventListener('scroll', () => {
+      if (scrollRafPending) return;
+      scrollRafPending = true;
+      requestAnimationFrame(() => {
+        scrollRafPending = false;
+        const r = canvas.getBoundingClientRect();
+        heroRect.left = r.left;
+        heroRect.top = r.top;
+        evaluatePointer();
+      });
+    }, { passive: true });
+
+    hero.addEventListener('pointerleave', easeOut);
+    window.addEventListener('pointercancel', easeOut);
+    window.addEventListener('blur', easeOut);
+  }
+
+  // ── THE CHANGER (logo click cycles themes) ──────────────────────────────────
+  const changerBtn = document.getElementById('changer');
+  if (changerBtn) {
+    changerBtn.addEventListener('click', () => requestSwitch(activeIdx + 1));
+  }
+
+  // ── BOOT ────────────────────────────────────────────────────────────────────
+  // Initial theme: #hash wins (explicit ask), then the last theme this visitor
+  // was on (localStorage), then the first in the cycle.
+  let booted = false;
+  function boot() {
+    if (booted) return;
+    booted = true;
+    const hash = (location.hash || '').slice(1);
+    let stored = null;
+    try { stored = localStorage.getItem('crac:theme'); } catch (e) { /* private mode etc. */ }
+    const hashIdx = themes.findIndex(t => t.id === hash);
+    const storedIdx = themes.findIndex(t => t.id === stored);
+    activeIdx = hashIdx >= 0 ? hashIdx : (storedIdx >= 0 ? storedIdx : 0);
+    applyTheme(themes[activeIdx]);
+    initialized = true;
+    resize();
+    start();
+  }
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(boot);
+    setTimeout(boot, 1500);
+  } else {
+    boot();
+  }
+})();
+</script>
 </body>
 </html>
