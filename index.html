@@ -8,6 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+// In <head> ON PURPOSE: streamed HTML paints the top of the page before
+// end-of-body scripts run, so the .js gate must exist before first paint or
+// the nav flashes visible → hidden → entrance. No-JS visitors never get the
+// class and see everything immediately.
+document.documentElement.classList.add('js');
+</script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -150,8 +157,11 @@
   /* ENTRANCE CHOREOGRAPHY — nav and scroll cue trail the canvas ink-in (load only;
      theme switches keep the chrome in place). Gated behind .js: no-JS visitors
      see everything immediately. */
-  .js nav { opacity: 0; transition: opacity 1.1s ease; }
-  .js nav.in { opacity: 1; }
+  /* Transition lives on the .in state ONLY: the hidden state must never
+     animate, or a late-arriving .js class makes the chrome visibly fade OUT
+     before its entrance (streamed HTML paints before end-of-body scripts). */
+  .js nav { opacity: 0; }
+  .js nav.in { opacity: 1; transition: opacity 1.1s ease; }
 
   /* HERO — the canvas IS the hero, full viewport, edge to edge */
   .hero {
@@ -173,8 +183,8 @@
   }
   .scroll-cue .bar { width: 1.5px; height: 30px; background: var(--fg); opacity: 0.6; }
   @keyframes bob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 6px); } }
-  .js .scroll-cue { opacity: 0; transition: opacity 1.1s ease; }
-  .js .scroll-cue.in { opacity: 0.55; }
+  .js .scroll-cue { opacity: 0; }
+  .js .scroll-cue.in { opacity: 0.55; transition: opacity 1.1s ease; }
   .js .scroll-cue.gone { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
 
   /* CONTENT SECTIONS BELOW THE HERO */
@@ -1695,9 +1705,7 @@ window.CRAC_THEMES.push({
 </script>
 
 <script>
-// Mark that JS is live so CSS may hide .reveal elements. Without this class
-// (no-JS or a parse error in this block) everything stays fully visible.
-document.documentElement.classList.add('js');
+// (.js class is added in <head> — see the note there.)
 
 // ── TRIMESTER DATE ───────────────────────────────────────────────────────────
 (function(){
